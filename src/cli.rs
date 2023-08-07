@@ -27,7 +27,7 @@ struct Config {
 
 // Define the command-line parameters using the 'clap' crate
 fn define_cli_parameters() -> App<'static, 'static> {
-    App::new("Photo Organizer")
+    App::new("Clineup")
         .arg(
             Arg::with_name("source")
                 .long("source")

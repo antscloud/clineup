@@ -1,7 +1,7 @@
+use clineup::cli::parse_cli;
+use clineup::exif_extractor::ExifExtractor;
 use env_logger;
-use photo_organizer_rs::cli::parse_cli;
-use photo_organizer_rs::exif_extractor::ExifExtractor;
-// use photo_organizer_rs::path_formatter::PathFormatter;
+// use clineup::path_formatter::PathFormatter;
 use std::fs;
 fn main() {
     parse_cli();
