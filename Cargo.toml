@@ -1,0 +1,17 @@
+[package]
+edition = "2021"
+name = "photo-organizer-rs"
+version = "0.1.0"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+chrono = "0.4.26"
+clap = "2.33.3"
+kamadak-exif = "0.5.5"
+regex = "1.9.1"
+reqwest = {version = "0.11", features = ["blocking"]}
+serde = {version = "1.0", features = ["derive"]}
+serde_json = "1.0.103"
+log = "0.4"
+env_logger = "0.10"
