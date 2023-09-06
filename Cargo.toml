@@ -7,7 +7,7 @@ license-file = "LICENSE"
 description = "A command-line utility for organizing media files"
 license = "AGPL-3.0"
 repository = "https://github.com/antscloud/clineup"
-keywords = ["photo-organizer", "file-organization", "exiftool", "command-line-interface", "reverse-geocoding"]
+keywords = ["photo-organizer", "file-organization", "exiftool", "cli", "reverse-geocoding"]
 authors = ["Antoine Gibek"]
 categories = ["command-line-utilities"]
 
