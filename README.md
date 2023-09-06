@@ -4,6 +4,14 @@ Clineup (pronounced "clean up") is the fusion of "CLI" (Command-Line Interface) 
 
 It is a Rust-based CLI utility aimed at providing pragmatic programmable media rearrangement.
 
+Inspired by [Elodie](https://github.com/jmathai/elodie) but with some extra-features : 
+
+- Multiple reverse geocoding API
+- Multiple variables fallback 
+- Ability to Copy / Move or Symlink
+- Written in Rust
+
+
 ```sh
 Clineup 
 Utility tool for organizing media
@@ -86,3 +94,10 @@ The syntax to respect is the following :
 - `2023/08/Unknown camera brand/Unknown city`
 - `Unknown year/Custom month/Unknown camera brand/Unknown city`
 - etc
+
+## TODO 
+
+- [ ] Implements other reverse geocoding services
+- [ ] Add event placeholder
+- [ ] Exclude pattern
+- [ ] Add tests 
