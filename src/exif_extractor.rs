@@ -1,21 +1,26 @@
 use exif::Exif;
 
+use crate::errors::ClineupError;
+
 pub struct ExifExtractor {
     exif: Exif,
 }
 
 impl ExifExtractor {
-    pub fn new(path: String) -> Result<Self, String> {
-        let fd = std::fs::File::open(&path).map_err(|err| err.to_string())?;
+    pub fn new(path: String) -> Result<Self, ClineupError> {
+        let fd = std::fs::File::open(&path)?;
         let mut bufreader = std::io::BufReader::new(&fd);
         let exifreader = exif::Reader::new();
         let exif = exifreader
             .read_from_container(&mut bufreader)
-            .map_err(|err| err.to_string())?;
+            .map_err(|err| ClineupError::ExifError {
+                source: err,
+                file: path,
+            })?;
         Ok(ExifExtractor { exif })
     }
 
-    pub fn get_float_value(&self, tag: exif::Tag) -> Result<f32, String> {
+    pub fn get_float_value(&self, tag: exif::Tag) -> Result<f32, ClineupError> {
         if let Some(field) = self.exif.get_field(tag, exif::In::PRIMARY) {
             if let exif::Value::Rational(ref v) = field.value {
                 if !v.is_empty() {
@@ -23,10 +28,12 @@ impl ExifExtractor {
                 }
             }
         }
-        Err(format!("Invalid or missing tag: {:?}", tag))
+        Err(ClineupError::ExifMissingTag {
+            tag: tag.to_string(),
+        })
     }
 
-    pub fn get_gps_float_value(&self, tag: exif::Tag) -> Result<f32, String> {
+    pub fn get_gps_float_value(&self, tag: exif::Tag) -> Result<f32, ClineupError> {
         if let Some(field) = self.exif.get_field(tag, exif::In::PRIMARY) {
             if let exif::Value::Rational(ref v) = field.value {
                 if v.len() >= 3 {
@@ -42,10 +49,12 @@ impl ExifExtractor {
                 }
             }
         }
-        Err(format!("Invalid or missing tag: {:?}", tag))
+        Err(ClineupError::ExifMissingTag {
+            tag: tag.to_string(),
+        })
     }
 
-    pub fn get_string_value(&self, tag: exif::Tag) -> Result<String, String> {
+    pub fn get_string_value(&self, tag: exif::Tag) -> Result<String, ClineupError> {
         if let Some(field) = self.exif.get_field(tag, exif::In::PRIMARY) {
             let value = field.display_value().to_string().replace("\"", "");
             let components: Vec<&str> = value.split(',').map(str::trim).collect();
@@ -54,46 +63,52 @@ impl ExifExtractor {
                 return Ok(concatenated_value);
             }
         }
-        Err(format!("Invalid or missing tag: {:?}", tag))
+        Err(ClineupError::ExifMissingTag {
+            tag: tag.to_string(),
+        })
     }
 
-    pub fn get_latitude(&self) -> Result<f32, String> {
+    pub fn get_latitude(&self) -> Result<f32, ClineupError> {
         self.get_gps_float_value(exif::Tag::GPSLatitude)
     }
 
-    pub fn get_longitude(&self) -> Result<f32, String> {
+    pub fn get_longitude(&self) -> Result<f32, ClineupError> {
         self.get_gps_float_value(exif::Tag::GPSLongitude)
     }
 
-    pub fn get_altitude(&self) -> Result<f32, String> {
+    pub fn get_altitude(&self) -> Result<f32, ClineupError> {
         self.get_float_value(exif::Tag::GPSAltitude)
     }
 
-    pub fn get_modification_date(&self) -> Result<chrono::NaiveDateTime, String> {
+    pub fn get_modification_date(&self) -> Result<chrono::NaiveDateTime, ClineupError> {
         let date = self
             .exif
             .get_field(exif::Tag::DateTimeOriginal, exif::In::PRIMARY);
+
         if let Some(value) = date {
             let date_string = value.display_value().to_string();
             return chrono::NaiveDateTime::parse_from_str(&date_string, "%Y-%m-%d %H:%M:%S")
-                .map_err(|err| err.to_string());
+                .map_err(ClineupError::DateTimeParseError);
         }
-        Err("Date tag is missing".to_string())
+
+        Err(ClineupError::ExifMissingTag {
+            tag: "DateTimeOriginal".to_string(),
+        })
     }
 
-    pub fn get_width(&self) -> Result<f32, String> {
+    pub fn get_width(&self) -> Result<f32, ClineupError> {
         self.get_float_value(exif::Tag::ImageWidth)
     }
 
-    pub fn get_height(&self) -> Result<f32, String> {
+    pub fn get_height(&self) -> Result<f32, ClineupError> {
         self.get_float_value(exif::Tag::ImageLength)
     }
 
-    pub fn get_camera_model(&self) -> Result<String, String> {
+    pub fn get_camera_model(&self) -> Result<String, ClineupError> {
         self.get_string_value(exif::Tag::Model)
     }
 
-    pub fn get_camera_brand(&self) -> Result<String, String> {
+    pub fn get_camera_brand(&self) -> Result<String, ClineupError> {
         self.get_string_value(exif::Tag::Make)
     }
 }
