@@ -29,7 +29,7 @@ impl OrganizationStrategy for CopyStrategy {
         );
 
         if let Some(parent) = destination.parent() {
-            std::fs::create_dir_all(parent);
+            let _ = std::fs::create_dir_all(parent);
         };
 
         if destination.exists() {
@@ -60,7 +60,7 @@ impl OrganizationStrategy for SymlinksStrategy {
             original_file.display(),
         );
         if let Some(parent) = destination.parent() {
-            std::fs::create_dir_all(parent);
+            let _ = std::fs::create_dir_all(parent);
         };
 
         if destination.exists() {
@@ -90,7 +90,7 @@ impl OrganizationStrategy for MoveStrategy {
             destination.display(),
         );
         if let Some(parent) = destination.parent() {
-            std::fs::create_dir_all(parent);
+            let _ = std::fs::create_dir_all(parent);
         };
 
         if destination.exists() {
