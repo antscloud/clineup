@@ -1,9 +1,18 @@
 [package]
-edition = "2021"
 name = "clineup"
 version = "0.1.0"
+readme = "README.md"
+license-file = "LICENSE"
+description = "A command-line utility for organizing media files"
+license = "AGPL-3.0"
+repository = "https://github.com/antscloud/clineup"
+keywords = ["media","photo", "organizer", "automation", "organizer", "CLI", "command-line-interface", "geocoding", "reverse-geocoding", "Reverse Geocoding", "exif", "exiftool", "photo-organizer", "Photo Management", "File Organization"]
+authors = ["Antoine Gibek"]
+categories = ["command-line-utilities"]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[[bin]]
+name = "clineup"
+path = "src/main.rs"
 
 [dependencies]
 chrono = "0.4.26"
