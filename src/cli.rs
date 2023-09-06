@@ -1,16 +1,16 @@
 use std::collections::HashMap;
 use std::{num::ParseIntError, process::exit};
 
-use crate::gps::{base::GpsResolutionProvider, gpsenum::GpsResolutionProviderImpl};
+use crate::gps::{gpsenum::GpsResolutionProviderImpl};
 use crate::organizer::OrganizationMode;
 use crate::placeholders::Placeholder;
 use crate::utils::is_there_a_location_placeholder;
 use clap::{App, Arg};
 use env_logger;
-use log::{error, info, warn, LevelFilter};
+use log::{error, warn, LevelFilter};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use serde_json::error;
+
 // Configuration struct for the photo organizer
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Config {

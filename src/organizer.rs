@@ -11,7 +11,7 @@ pub enum OrganizationMode {
 }
 
 pub trait OrganizationStrategy {
-    fn organize(&self, original_file: &PathBuf, destination: &PathBuf) {}
+    fn organize(&self, _original_file: &PathBuf, _destination: &PathBuf) {}
 }
 
 pub struct CopyStrategy {}

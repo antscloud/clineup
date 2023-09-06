@@ -2,11 +2,11 @@ use crate::errors::ClineupError;
 use crate::exif_extractor::ExifExtractor;
 use crate::gps::base::GpsResolutionProvider;
 use crate::gps::location::LocationInfo;
-use crate::path::parser::map_placeholders_to_enums;
-use crate::path::parser::parse_placeholders;
+
+
 use crate::placeholders::Placeholder;
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::path::{PathBuf};
 
 use crate::utils::is_there_a_date_placeholder;
 use crate::utils::is_there_a_location_placeholder;

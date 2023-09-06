@@ -1,5 +1,5 @@
 use crate::placeholders::Placeholder;
-use std::{collections::HashMap, ops::Add};
+use std::{collections::HashMap};
 
 fn is_word_char(c: char) -> bool {
     c.is_alphanumeric() || c == '_'

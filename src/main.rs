@@ -15,7 +15,7 @@ use clineup::path::formatter::PathFormatter;
 use clineup::path::iterator::FileIterator;
 use clineup::path::parser::map_placeholders_to_enums;
 use clineup::path::parser::parse_placeholders;
-use core::panic;
+
 use log::debug;
 use log::error;
 use log::info;
