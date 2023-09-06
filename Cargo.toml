@@ -1,4 +1,5 @@
 [package]
+edition = "2021"
 name = "clineup"
 version = "0.1.0"
 readme = "README.md"
@@ -9,10 +10,6 @@ repository = "https://github.com/antscloud/clineup"
 keywords = ["media","photo", "organizer", "automation", "organizer", "CLI", "command-line-interface", "geocoding", "reverse-geocoding", "Reverse Geocoding", "exif", "exiftool", "photo-organizer", "Photo Management", "File Organization"]
 authors = ["Antoine Gibek"]
 categories = ["command-line-utilities"]
-
-[[bin]]
-name = "clineup"
-path = "src/main.rs"
 
 [dependencies]
 chrono = "0.4.26"
@@ -27,3 +24,7 @@ log = "0.4"
 env_logger = "0.10"
 sha2 = "0.10"
 thiserror = "1.0.48"
+
+[[bin]]
+name = "clineup"
+path = "src/main.rs"
