@@ -3,10 +3,9 @@ use crate::exif_extractor::ExifExtractor;
 use crate::gps::base::GpsResolutionProvider;
 use crate::gps::location::LocationInfo;
 
-
 use crate::placeholders::Placeholder;
 use std::collections::HashMap;
-use std::path::{PathBuf};
+use std::path::PathBuf;
 
 use crate::utils::is_there_a_date_placeholder;
 use crate::utils::is_there_a_location_placeholder;
@@ -197,10 +196,6 @@ impl<'a, 'b> PathFormatter<'a, 'b> {
                             get_fallback_name("Municipality")
                         }
                     },
-                    Placeholder::Event => {
-                        is_fallback = true;
-                        get_fallback_name("Event")
-                    }
                     Placeholder::OriginalFilename => {
                         if let Some(_path) = path.file_name() {
                             _path.to_string_lossy().to_string()

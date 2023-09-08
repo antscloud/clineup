@@ -1,24 +1,27 @@
 use std::collections::HashMap;
-use std::{num::ParseIntError, process::exit};
+use std::process::exit;
 
-use crate::gps::{gpsenum::GpsResolutionProviderImpl};
+use crate::errors::ClineupError;
+use crate::gps::gpsenum::GpsResolutionProviderImpl;
 use crate::organizer::OrganizationMode;
 use crate::placeholders::Placeholder;
 use crate::utils::is_there_a_location_placeholder;
+use crate::utils::print_error;
 use clap::{App, Arg};
 use env_logger;
-use log::{error, warn, LevelFilter};
+use log::{error, LevelFilter};
 use regex::Regex;
-use serde::{Deserialize, Serialize};
 
 // Configuration struct for the photo organizer
-#[derive(Debug, Deserialize, Serialize, Clone)]
+#[derive(Debug, Clone)]
 pub struct Config {
     pub source: String,
     pub destination: String,
     pub recursive: bool,
     pub extensions: Option<Vec<String>>,
     pub exclude_extensions: Option<Vec<String>>,
+    pub include_regex: Option<Regex>,
+    pub exclude_regex: Option<Regex>,
     pub size_greater: Option<u64>,
     pub size_lower: Option<u64>,
     pub dry_run: bool,
@@ -29,7 +32,6 @@ pub struct Config {
     pub strategy: Option<OrganizationMode>,
     pub reverse_geocoding: Option<GpsResolutionProviderImpl>,
     pub nominatim_email: Option<String>,
-    pub ical: Option<String>,
     pub folder_format: Option<String>,
     pub filename_format: Option<String>,
 }
@@ -68,11 +70,31 @@ fn define_cli_parameters() -> App<'static, 'static> {
                 .takes_value(true),
         )
         .arg(
-            Arg::with_name("exclude_extension")
-                .long("exclude_extension")
+            Arg::with_name("exclude-extension")
+                .long("exclude-extension")
                 .value_name("EXTENSION")
                 .help("Excludes photos with the specified file extensions")
                 .takes_value(true)
+        )
+        .arg(
+            Arg::with_name("include-regex")
+                .long("include-regex")
+                .value_name("INCLUDE-REGEX")
+                .help("The include regex is used to filter files")
+                .long_help("
+                The regex is matched against the full path of the file, including the parent folders.\n
+                For example, to include all files containing 'IMG', use the regex '.*IMG.*")
+                .takes_value(true),
+        )
+        .arg(
+            Arg::with_name("exclude-regex")
+                .long("exclude-regex")
+                .value_name("EXCLUDE-REGEX")
+                .help("The exclude regex is used to filter files")
+                .long_help("
+                The regex is matched against the full path of the file, including the parent folders.\n
+                For example, to exclude all files containing 'IMG', use the regex '.*IMG.*")
+                .takes_value(true),
         )
         .arg(
             Arg::with_name("size-greater")
@@ -99,22 +121,10 @@ fn define_cli_parameters() -> App<'static, 'static> {
                 .help("Specifies the number of files to be processed by the dry run"),
         )
         .arg(
-            Arg::with_name("log")
-                .long("log")
-                .value_name("LOG_FILE")
-                .help("Specifies a log file to record the organization process")
-                .takes_value(true),
-        )
-        .arg(
             Arg::with_name("verbose")
                 .short("v")
                 .multiple(true) // Allow multiple occurrences of -v (i.e., -vv, -vvv)
                 .help("Sets the log level to increase verbosity"),
-        )
-        .arg(
-            Arg::with_name("calendar")
-                .long("calendar")
-                .help("Specifies a calendar (.ics) to use for %event"),
         )
         .arg(
             Arg::with_name("folder-format")
@@ -164,33 +174,26 @@ fn define_cli_parameters() -> App<'static, 'static> {
                 .help("Email to use for nominatim API. This is mandatory following the nominatim usage policy")
                 .takes_value(true),
         )
-        .arg(
-            Arg::with_name("config")
-                .long("config-file")
-                .help("Specifies the path of the configuration file"),
-        )
 }
 
-#[derive(Debug)]
-enum SizeParseError {
-    ParseIntError(ParseIntError),
-    InvalidSizeFormat,
-}
-
-impl From<ParseIntError> for SizeParseError {
-    fn from(err: ParseIntError) -> Self {
-        SizeParseError::ParseIntError(err)
-    }
-}
-
-fn convert_size_to_bytes(size: &str) -> Result<u64, SizeParseError> {
-    let re = Regex::new(r"(?P<number>[0-9]+)(?P<unit>[KMGTP]?)[Bo]?")
-        .expect("Regex for parsing size is not valid");
+fn convert_size_to_bytes(size: &str) -> Result<u64, ClineupError> {
+    let re = Regex::new(r"(?P<number>[0-9]+)(?P<unit>[KMGTP]?)[Bo]?")?;
 
     if let Some(capture) = re.captures(size) {
         if let Some(number_str) = capture.name("number") {
-            let number: u64 = number_str.as_str().parse()?;
+            if number_str.len() == 0 {
+                return Err(ClineupError::InvalidSizeFormat(size.to_string()));
+            }
+
+            let number: u64 = number_str
+                .as_str()
+                .parse()
+                .map_err(|_| ClineupError::InvalidNumberFormat(number_str.as_str().to_string()))?;
+
             if let Some(unit) = capture.name("unit") {
+                if unit.len() == 0 {
+                    return Err(ClineupError::InvalidSizeFormat(size.to_string()));
+                }
                 let unit_str = unit.as_str();
                 let multiplier = match unit_str {
                     _ if unit_str.contains('K') => 1024,
@@ -201,10 +204,12 @@ fn convert_size_to_bytes(size: &str) -> Result<u64, SizeParseError> {
                     _ => 1,
                 };
                 return Ok(number * multiplier);
+            } else {
+                return Err(ClineupError::InvalidSizeFormat(size.to_string()));
             }
         }
     }
-    Err(SizeParseError::InvalidSizeFormat)
+    Err(ClineupError::InvalidSizeFormat(size.to_string()))
 }
 
 pub fn set_log_level(verbosity: u64) {
@@ -216,74 +221,75 @@ pub fn set_log_level(verbosity: u64) {
     env_logger::builder().filter_level(level).init();
 }
 
-fn get_geocoding_enum(_enum: Option<&str>) -> Option<GpsResolutionProviderImpl> {
+fn get_geocoding_enum(
+    _enum: Option<&str>,
+) -> Result<Option<GpsResolutionProviderImpl>, ClineupError> {
     if let Some(_good_enum) = _enum {
         match _good_enum {
-            "nominatim" => Some(GpsResolutionProviderImpl::Nominatim),
-            _ => {
-                error!("Unknown geocoding provider");
-                exit(1);
-            }
+            "nominatim" => Ok(Some(GpsResolutionProviderImpl::Nominatim)),
+            _ => Err(ClineupError::InvalidGeocodingProvider(
+                _good_enum.to_string(),
+            )),
         }
     } else {
-        None
+        Ok(None)
     }
 }
-fn get_strategy_enum(_enum: Option<&str>) -> Option<OrganizationMode> {
+fn get_strategy_enum(_enum: Option<&str>) -> Result<Option<OrganizationMode>, ClineupError> {
     if let Some(_good_enum) = _enum {
         match _good_enum {
-            "copy" => Some(OrganizationMode::Copy),
-            "symlink" => Some(OrganizationMode::Symlinks),
-            "move" => Some(OrganizationMode::Move),
-            _ => {
-                error!("Unknown strategy");
-                exit(1);
-            }
+            "copy" => Ok(Some(OrganizationMode::Copy)),
+            "symlink" => Ok(Some(OrganizationMode::Symlinks)),
+            "move" => Ok(Some(OrganizationMode::Move)),
+            _ => Err(ClineupError::InvalidOrganization(_good_enum.to_string())),
         }
     } else {
-        None
+        Ok(None)
     }
 }
-fn get_size_greater(size_greater: Option<&str>) -> Option<u64> {
-    let size_greater = if let Some(size_gt) = size_greater {
-        match convert_size_to_bytes(size_gt) {
-            Ok(size) => Some(size),
-            Err(_) => {
-                warn!("Invalid size format for size greater");
-                None
-            }
-        }
+fn get_size_greater(size_greater: Option<&str>) -> Result<Option<u64>, ClineupError> {
+    if let Some(size_gt) = size_greater {
+        convert_size_to_bytes(size_gt).map(|r| Some(r))
     } else {
-        None
-    };
-    size_greater
+        Ok(None)
+    }
 }
-fn get_size_lower(size_lower: Option<&str>) -> Option<u64> {
-    let size_lower = if let Some(size_lt) = size_lower {
-        match convert_size_to_bytes(size_lt) {
-            Ok(size) => Some(size),
-            Err(_) => {
-                warn!("Invalid size format for size lower");
-                None
-            }
-        }
+fn get_size_lower(size_lower: Option<&str>) -> Result<Option<u64>, ClineupError> {
+    if let Some(size_lt) = size_lower {
+        convert_size_to_bytes(size_lt).map(|r| Some(r))
     } else {
-        None
-    };
-    size_lower
+        Ok(None)
+    }
 }
 
-pub fn parse_cli() -> Config {
-    // Define and parse the command-line arguments
-    let matches = define_cli_parameters().get_matches();
+fn convert_to_regex(regex: Option<&str>) -> Result<Option<Regex>, ClineupError> {
+    if let Some(regex_str) = regex {
+        Ok(Some(Regex::new(regex_str)?))
+    } else {
+        Ok(None)
+    }
+}
 
-    let size_greater = get_size_greater(matches.value_of("size-greater"));
-    let size_lower = get_size_lower(matches.value_of("size-lower"));
-    let reverse_geocoding = get_geocoding_enum(matches.value_of("reverse-geocoding"));
-    let strategy = get_strategy_enum(matches.value_of("strategy"));
+pub fn parse_cli() -> clap::ArgMatches<'static> {
+    define_cli_parameters().get_matches()
+}
+
+pub fn get_cli_config(matches: clap::ArgMatches) -> Config {
+    // Unwrap is used here to quit as soon as possible whern parsing
+    let size_greater =
+        get_size_greater(matches.value_of("size-greater")).unwrap_or_else(print_error);
+    let size_lower = get_size_lower(matches.value_of("size-lower")).unwrap_or_else(print_error);
+    let reverse_geocoding =
+        get_geocoding_enum(matches.value_of("reverse-geocoding")).unwrap_or_else(print_error);
+    let strategy = get_strategy_enum(matches.value_of("strategy")).unwrap_or_else(print_error);
 
     let dry_number_of_files_str = matches.value_of("dry-run-number-of-files").unwrap_or("10");
     let dry_number_of_files = dry_number_of_files_str.parse::<u64>().unwrap_or(10);
+
+    let include_regex =
+        convert_to_regex(matches.value_of("include-regex")).unwrap_or_else(print_error);
+    let exclude_regex =
+        convert_to_regex(matches.value_of("exclude-regex")).unwrap_or_else(print_error);
 
     Config {
         source: matches.value_of("source").unwrap().to_string(),
@@ -295,6 +301,8 @@ pub fn parse_cli() -> Config {
         exclude_extensions: matches
             .values_of("exclude-extension")
             .map(|values| values.map(|e| e.to_ascii_lowercase()).collect()),
+        include_regex: include_regex,
+        exclude_regex: exclude_regex,
         size_greater: size_greater,
         size_lower: size_lower,
         dry_run: matches.is_present("dry-run"),
@@ -307,7 +315,6 @@ pub fn parse_cli() -> Config {
         nominatim_email: matches
             .value_of("nominatim-email")
             .map(|email| email.to_string()),
-        ical: matches.value_of("log").map(|log| log.to_string()),
         folder_format: matches
             .value_of("folder-format")
             .map(|folder_format| folder_format.to_string()),
@@ -317,7 +324,7 @@ pub fn parse_cli() -> Config {
     }
 }
 
-pub fn check_config_from_placeholders(
+pub fn check_cli_config_from_placeholders(
     config: &Config,
     placeholders: &HashMap<String, HashMap<String, Placeholder>>,
 ) {

@@ -1,4 +1,5 @@
-use clineup::cli::check_config_from_placeholders;
+use clineup::cli::check_cli_config_from_placeholders;
+use clineup::cli::get_cli_config;
 use clineup::cli::parse_cli;
 use clineup::cli::set_log_level;
 use clineup::cli::Config;
@@ -85,7 +86,16 @@ pub fn get_reverse_geocoding(config: &Config) -> Option<Box<dyn GpsResolutionPro
     }
 }
 
-fn get_organization_strategy(config: &Config) -> Option<Box<dyn OrganizationStrategy>> {
+/// Returns an organization strategy based on the given config.
+///
+/// # Arguments
+///
+/// * `config` - The configuration object.
+///
+/// # Returns
+///
+/// An `Option` containing a boxed organization strategy, or `None` if no strategy is specified in the config.
+pub fn get_organization_strategy(config: &Config) -> Option<Box<dyn OrganizationStrategy>> {
     match &config.strategy {
         Some(strategy) => match strategy {
             OrganizationMode::Copy => Some(Box::new(CopyStrategy::new())),
@@ -96,9 +106,10 @@ fn get_organization_strategy(config: &Config) -> Option<Box<dyn OrganizationStra
     }
 }
 fn main() {
-    let config = parse_cli();
+    let matches = parse_cli();
+    set_log_level(matches.occurrences_of("verbose"));
+    let config = get_cli_config(matches);
 
-    set_log_level(config.verbosity);
     let strategy = get_organization_strategy(&config);
 
     if strategy.is_none() {
@@ -123,7 +134,7 @@ fn main() {
     debug!("Parsing placeholders");
     let _placeholders = parse_placeholders(&full_path.as_ref().unwrap());
     let placeholders = map_placeholders_to_enums(&_placeholders);
-    check_config_from_placeholders(&config, &placeholders);
+    check_cli_config_from_placeholders(&config, &placeholders);
 
     let destination = Path::new(&config.destination);
 
@@ -147,6 +158,7 @@ fn main() {
         info!("Configuration \n{:?}", config)
     }
     let mut dry_run_count = 0;
+
     for entry in files {
         let formatted_path = path_formatter.get_formatted_path(&entry);
 

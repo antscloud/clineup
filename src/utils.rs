@@ -1,21 +1,8 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, process::exit};
 
-use crate::placeholders::Placeholder;
+use log::error;
 
-pub fn is_there_an_event_placeholder(
-    placeholders: &HashMap<String, HashMap<String, Placeholder>>,
-) -> bool {
-    let mut is_there_an_event_placeholder = false;
-    for (_, placeholders) in placeholders {
-        for (_, placeholder) in placeholders {
-            if matches!(placeholder, Placeholder::Event) {
-                is_there_an_event_placeholder = true;
-                break;
-            }
-        }
-    }
-    is_there_an_event_placeholder
-}
+use crate::{errors::ClineupError, placeholders::Placeholder};
 
 pub fn is_there_a_date_placeholder(
     placeholders: &HashMap<String, HashMap<String, Placeholder>>,
@@ -55,4 +42,9 @@ pub fn is_there_a_location_placeholder(
         }
     }
     is_there_a_location_placeholder
+}
+
+pub fn print_error<T>(e: ClineupError) -> T {
+    error!("{e}");
+    exit(1)
 }

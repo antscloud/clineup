@@ -1,5 +1,5 @@
 use crate::placeholders::Placeholder;
-use std::{collections::HashMap};
+use std::collections::HashMap;
 
 fn is_word_char(c: char) -> bool {
     c.is_alphanumeric() || c == '_'
@@ -226,16 +226,16 @@ mod tests {
     }
     #[test]
     fn test_parse_parse_placeholders_full_path() {
-        let input = "/home/myuser/photos/%year/{%city|%event|To sort}";
+        let input = "/home/myuser/photos/%year/{%city|%camera_brand|To sort}";
         let result = parse_placeholders(input);
 
         let mut expected = HashMap::new();
         expected.insert("%year".to_string(), vec!["%year".to_string()]);
         expected.insert(
-            "{%city|%event|To sort}".to_string(),
+            "{%city|%camera_brand|To sort}".to_string(),
             vec![
                 "%city".to_string(),
-                "%event".to_string(),
+                "%camera_brand".to_string(),
                 "To sort".to_string(),
             ],
         );

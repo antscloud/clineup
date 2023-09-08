@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 #[derive(Debug, thiserror::Error)]
 pub enum ClineupError {
     #[error("IO error: {0}")]
@@ -12,7 +14,7 @@ pub enum ClineupError {
     #[error("Serde Json error: {0}")]
     SerdeJsonError(#[from] serde_json::Error),
 
-    #[error("Exif error: {0}")]
+    #[error("Date time parsing error: {0}")]
     DateTimeParseError(#[from] chrono::ParseError),
 
     #[error("Missing EXIF tag: {tag}")]
@@ -32,6 +34,20 @@ pub enum ClineupError {
 
     #[error("There is no location placeholder")]
     NoLocationPlaceholderFound,
+
+    #[error("Invalid size format : {0}")]
+    InvalidSizeFormat(String),
+    #[error("Invalid regex : {0}")]
+    RegexError(#[from] regex::Error),
+
+    #[error("Invalid number format: {0}")]
+    InvalidNumberFormat(String),
+
+    #[error("Invalid geocoding provider: {0}")]
+    InvalidGeocodingProvider(String),
+
+    #[error("Invalid organization strategy: {0}")]
+    InvalidOrganization(String),
 }
 
 impl From<exif::Error> for ClineupError {

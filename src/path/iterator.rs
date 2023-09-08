@@ -4,7 +4,6 @@ use glob::glob;
 use log::info;
 use log::warn;
 
-
 use std::fs;
 use std::path::PathBuf;
 
@@ -138,6 +137,18 @@ impl<'a> Iterator for FileIterator<'a> {
                 Ok(entry) => {
                     // Check if the entry is a file
                     if entry.is_file() {
+                        if let Some(include_regex) = &self.config.include_regex {
+                            if !include_regex.is_match(&entry.to_string_lossy()) {
+                                continue;
+                            }
+                        }
+
+                        if let Some(exclude) = &self.config.exclude_regex {
+                            if exclude.is_match(&entry.to_string_lossy()) {
+                                continue;
+                            }
+                        }
+
                         if !is_allowed_extension(
                             &entry,
                             &self.config.extensions,
@@ -145,6 +156,7 @@ impl<'a> Iterator for FileIterator<'a> {
                         ) {
                             continue;
                         }
+
                         let _is_allowed_size = is_allowed_size(
                             &entry,
                             &self.config.size_lower,
