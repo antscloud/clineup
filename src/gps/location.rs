@@ -1,5 +1,5 @@
 // Struct to hold location information
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct LocationInfo {
     country: Option<String>,
     state: Option<String>,

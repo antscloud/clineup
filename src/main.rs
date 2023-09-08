@@ -141,10 +141,12 @@ fn main() {
     let reverse_geocoding = get_reverse_geocoding(&config);
     debug!("Get reverse geocoding strategy");
 
-    let path_formatter = PathFormatter::new(
+    // It is mutable to be able to store the positions and location when optmizing gps positions
+    let mut path_formatter = PathFormatter::new(
         full_path.as_ref().unwrap(),
         &placeholders,
         reverse_geocoding,
+        config.gps_optimization,
     );
     let files = FileIterator::new(&config);
 

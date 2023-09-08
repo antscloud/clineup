@@ -28,6 +28,7 @@ pub struct Config {
     pub dry_run_number_of_files: u64,
     pub log_file: Option<String>,
     pub verbosity: u64,
+    pub gps_optimization: bool,
     pub drop_duplicates: bool,
     pub strategy: Option<OrganizationMode>,
     pub reverse_geocoding: Option<GpsResolutionProviderImpl>,
@@ -310,6 +311,7 @@ pub fn get_cli_config(matches: clap::ArgMatches) -> Config {
         log_file: matches.value_of("log").map(|log| log.to_string()),
         verbosity: matches.occurrences_of("verbose"),
         strategy,
+        gps_optimization: matches.is_present("gps-optimization"),
         drop_duplicates: matches.is_present("drop-duplicates"),
         reverse_geocoding,
         nominatim_email: matches

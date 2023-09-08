@@ -1,9 +1,13 @@
+use log::debug;
+
 use crate::errors::ClineupError;
 use crate::exif_extractor::ExifExtractor;
+use crate::gps;
 use crate::gps::base::GpsResolutionProvider;
 use crate::gps::location::LocationInfo;
 
 use crate::placeholders::Placeholder;
+use std::cell::Cell;
 use std::collections::HashMap;
 use std::path::PathBuf;
 
@@ -13,11 +17,21 @@ use crate::utils::is_there_a_location_placeholder;
 pub fn get_fallback_name(which: &str) -> String {
     format!("Unknown {}", which)
 }
+// Define a custom key type that wraps the (f32, f32) tuple
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
+struct StringLatLon(String, String);
+
+fn round_float_to_nth_decimal_place(num: f32, decimal_places: u32) -> f32 {
+    let multiplier = 10_f32.powi(decimal_places as i32);
+    (num * multiplier).round() / multiplier
+}
 
 pub struct PathFormatter<'a, 'b> {
     path_to_format: &'a String,
     placeholders: &'b HashMap<String, HashMap<String, Placeholder>>,
     reverse_geocoding: Option<Box<dyn GpsResolutionProvider>>,
+    gps_positions: HashMap<StringLatLon, LocationInfo>,
+    optimize_gps: bool,
 }
 
 impl<'a, 'b> PathFormatter<'a, 'b> {
@@ -25,36 +39,66 @@ impl<'a, 'b> PathFormatter<'a, 'b> {
         path_to_format: &'a String,
         placeholders: &'b HashMap<String, HashMap<String, Placeholder>>,
         reverse_geocoding: Option<Box<dyn GpsResolutionProvider>>,
+        optimize_gps: bool,
     ) -> Self {
+        let gps_positions = HashMap::new();
         PathFormatter {
             path_to_format,
             placeholders,
             reverse_geocoding,
+            gps_positions,
+            optimize_gps,
         }
     }
 
     fn get_location_info(
-        &self,
+        &mut self,
         exif_extractor: &ExifExtractor,
     ) -> Result<LocationInfo, ClineupError> {
-        let location = if is_there_a_location_placeholder(&self.placeholders) {
-            let lat = exif_extractor.get_latitude();
-            let lon = exif_extractor.get_longitude();
-            if lat.is_ok() && lon.is_ok() {
-                let lat = lat.unwrap();
-                let lon = lon.unwrap();
+        if !is_there_a_location_placeholder(&self.placeholders) {
+            return Err(ClineupError::NoLocationPlaceholderFound);
+        }
 
-                self.reverse_geocoding
-                    .as_ref()
-                    .unwrap()
-                    .get_location(lat, lon)
-            } else {
-                Err(ClineupError::LatOrLonMissing)
+        let lat = exif_extractor.get_latitude();
+        let lon = exif_extractor.get_longitude();
+
+        if !(lat.is_ok() && lon.is_ok()) {
+            return Err(ClineupError::LatOrLonMissing);
+        }
+
+        let lat = lat.unwrap();
+        let lon = lon.unwrap();
+
+        if !self.optimize_gps {
+            return self
+                .reverse_geocoding
+                .as_ref()
+                .unwrap()
+                .get_location(lat, lon);
+        }
+
+        let rounded_lat = round_float_to_nth_decimal_place(lat, 2);
+        let rounded_lon = round_float_to_nth_decimal_place(lon, 2);
+        let string_lat_lon = StringLatLon(rounded_lat.to_string(), rounded_lon.to_string());
+
+        if self.gps_positions.contains_key(&string_lat_lon) {
+            debug!("Get already computed location {:?}", string_lat_lon);
+            return Ok(self.gps_positions.get(&string_lat_lon).unwrap().clone());
+        }
+
+        let location = self
+            .reverse_geocoding
+            .as_ref()
+            .unwrap()
+            .get_location(rounded_lat, rounded_lon);
+        match location {
+            Ok(v) => {
+                debug!("Store location {:?}", v);
+                self.gps_positions.insert(string_lat_lon, v.clone());
+                return Ok(v);
             }
-        } else {
-            Err(ClineupError::NoDatePlaceholderFound)
+            Err(_) => return Err(ClineupError::LatOrLonMissing),
         };
-        location
     }
 
     fn get_modification_date(
@@ -71,7 +115,7 @@ impl<'a, 'b> PathFormatter<'a, 'b> {
 }
 
 impl<'a, 'b> PathFormatter<'a, 'b> {
-    pub fn get_formatted_path(&self, path: &PathBuf) -> Result<String, ClineupError> {
+    pub fn get_formatted_path(&mut self, path: &PathBuf) -> Result<String, ClineupError> {
         let mut formatted_path = String::from(self.path_to_format.clone());
         let exif_extractor = ExifExtractor::new(path.to_string_lossy().to_string())?;
 
