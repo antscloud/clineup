@@ -1,6 +1,11 @@
 use log::{error, info};
 use serde::{Deserialize, Serialize};
-use std::os::unix::fs::symlink as unix_symlink;
+
+#[cfg(target_os = "linux")]
+use std::os::unix::fs::symlink;
+#[cfg(target_os = "windows")]
+use std::os::windows::fs::symlink_file;
+
 use std::path::PathBuf;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -52,6 +57,22 @@ impl SymlinksStrategy {
     }
 }
 
+#[cfg(target_os = "linux")]
+fn make_symlink(original_file: &PathBuf, destination: &PathBuf) {
+    let symlink_result = symlink(original_file, destination);
+    match symlink_result {
+        Ok(_) => info!("File symlinked successfully"),
+        Err(e) => error!("Error symlinking file: {}", e),
+    }
+}
+#[cfg(target_os = "windows")]
+fn make_symlink(original_file: &PathBuf, destination: &PathBuf) {
+    let symlink_result = symlink_file(original_file, destination);
+    match symlink_result {
+        Ok(_) => info!("File symlinked successfully"),
+        Err(e) => error!("Error symlinking file: {}", e),
+    }
+}
 impl OrganizationStrategy for SymlinksStrategy {
     fn organize(&self, original_file: &PathBuf, destination: &PathBuf) {
         info!(
@@ -68,11 +89,7 @@ impl OrganizationStrategy for SymlinksStrategy {
             return;
         }
 
-        let symlink_result = unix_symlink(original_file, destination);
-        match symlink_result {
-            Ok(_) => info!("File symlinked successfully"),
-            Err(e) => error!("Error symlinking file: {}", e),
-        }
+        make_symlink(original_file, destination);
     }
 }
 pub struct MoveStrategy {}
