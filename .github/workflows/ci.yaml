@@ -92,12 +92,12 @@ jobs:
           cargo build --release --target=${{ matrix.target }}
       - name: Compress artifacts
         run: |
-          tar czf target/${{ matrix.target }}/release/clineup-${{ github.ref_name}}-${{ matrix.os }}.tar.gz target/${{ matrix.target }}/release/${{ matrix.binary }}
+          tar czf release-artifacts/clineup-${{ github.ref_name}}-${{ matrix.os }}.tar.gz target/${{ matrix.target }}/release/${{ matrix.binary }}
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.os }}
-          path: target/${{ matrix.target }}/release
+          path: release-artifacts/clineup-${{ github.ref_name}}-${{ matrix.os }}.tar.gz
           retention-days: 1
 
   create-release:
@@ -118,4 +118,4 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
-            release-artifacts/**/*.tar.gz
+            release-artifacts/*.tar.gz
