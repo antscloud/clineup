@@ -9,7 +9,8 @@ jobs:
     name: Test package
     runs-on: ubuntu-latest
     steps:
-      - uses: actions-rs/toolchain@v1
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           override: true
@@ -23,9 +24,10 @@ jobs:
     if: github.ref_type == 'tag'
     steps:
       - name: Set up Rust
-        uses: actions/setup-rust@v2
+        uses: actions-rs/toolchain@v1
         with:
-          rust-version: stable
+          toolchain: stable
+          override: true
       - name: Check out code
         uses: actions/checkout@v3
       - name: Publish to crates.io
@@ -78,9 +80,10 @@ jobs:
             binary: clineup.exe
     steps:
       - name: Set up Rust
-        uses: actions/setup-rust@v2
+        uses: actions-rs/toolchain@v1
         with:
-          rust-version: stable
+          toolchain: stable
+          override: true
       - name: Checkout
         uses: actions/checkout@v3
       - name: Build for ${{ matrix.os }} (Release)
