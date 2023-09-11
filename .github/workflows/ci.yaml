@@ -31,7 +31,7 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v3
       - name: Publish to crates.io
-        run: cargo publish --token ${{ secrets.CRATES_IO_TOKEN }}
+        run: cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
   docker:
     runs-on: ubuntu-latest
