@@ -1,9 +1,9 @@
 use log::{error, info};
 use serde::{Deserialize, Serialize};
 
-#[cfg(target_os = "linux")]
+#[cfg(target_family = "unix")]
 use std::os::unix::fs::symlink;
-#[cfg(target_os = "windows")]
+#[cfg(target_family = "windows")]
 use std::os::windows::fs::symlink_file;
 
 use std::path::PathBuf;
@@ -57,7 +57,7 @@ impl SymlinksStrategy {
     }
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(target_family = "unix")]
 fn make_symlink(original_file: &PathBuf, destination: &PathBuf) {
     let symlink_result = symlink(original_file, destination);
     match symlink_result {
@@ -65,7 +65,7 @@ fn make_symlink(original_file: &PathBuf, destination: &PathBuf) {
         Err(e) => error!("Error symlinking file: {}", e),
     }
 }
-#[cfg(target_os = "windows")]
+#[cfg(target_family = "windows")]
 fn make_symlink(original_file: &PathBuf, destination: &PathBuf) {
     let symlink_result = symlink_file(original_file, destination);
     match symlink_result {
