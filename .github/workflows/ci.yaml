@@ -111,11 +111,11 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v3
         with:
-          path: target
+          path: release-artifacts
 
       - name: Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
-            target/*.tar.gz
+            release-artifacts/**/*.tar.gz
