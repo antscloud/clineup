@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 // Configuration struct for the photo organizer
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, PartialEq)]
 pub enum Placeholder {
     Year,
     Month,
@@ -43,5 +43,48 @@ impl Placeholder {
             _ if format_string.starts_with("%") => Placeholder::Unknown,
             _ => Placeholder::Fallback,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_from_string() {
+        assert_eq!(Placeholder::from_string("%year"), Placeholder::Year);
+        assert_eq!(Placeholder::from_string("%month"), Placeholder::Month);
+        assert_eq!(Placeholder::from_string("%day"), Placeholder::Day);
+        assert_eq!(Placeholder::from_string("%width"), Placeholder::Width);
+        assert_eq!(Placeholder::from_string("%height"), Placeholder::Height);
+        assert_eq!(
+            Placeholder::from_string("%camera_model"),
+            Placeholder::CameraModel
+        );
+        assert_eq!(
+            Placeholder::from_string("%camera_brand"),
+            Placeholder::CameraBrand
+        );
+        assert_eq!(Placeholder::from_string("%country"), Placeholder::Country);
+        assert_eq!(Placeholder::from_string("%state"), Placeholder::State);
+        assert_eq!(Placeholder::from_string("%county"), Placeholder::County);
+        assert_eq!(
+            Placeholder::from_string("%municipality"),
+            Placeholder::Municipality
+        );
+        assert_eq!(Placeholder::from_string("%city"), Placeholder::City);
+        assert_eq!(
+            Placeholder::from_string("%original_folder"),
+            Placeholder::OriginalFolder
+        );
+        assert_eq!(
+            Placeholder::from_string("%original_filename"),
+            Placeholder::OriginalFilename
+        );
+        assert_eq!(
+            Placeholder::from_string("%unknown_placeholder"),
+            Placeholder::Unknown
+        );
+        assert_eq!(Placeholder::from_string("fallback"), Placeholder::Fallback);
     }
 }

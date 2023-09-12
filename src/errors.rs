@@ -37,6 +37,7 @@ pub enum ClineupError {
 
     #[error("Invalid size format : {0}")]
     InvalidSizeFormat(String),
+
     #[error("Invalid regex : {0}")]
     RegexError(#[from] regex::Error),
 
