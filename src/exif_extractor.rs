@@ -1,13 +1,14 @@
 use exif::Exif;
 
 use crate::errors::ClineupError;
+use std::path::PathBuf;
 
 pub struct ExifExtractor {
     exif: Exif,
 }
 
 impl ExifExtractor {
-    pub fn new(path: String) -> Result<Self, ClineupError> {
+    pub fn new(path: &PathBuf) -> Result<Self, ClineupError> {
         let fd = std::fs::File::open(&path)?;
         let mut bufreader = std::io::BufReader::new(&fd);
         let exifreader = exif::Reader::new();
@@ -15,7 +16,7 @@ impl ExifExtractor {
             .read_from_container(&mut bufreader)
             .map_err(|err| ClineupError::ExifError {
                 source: err,
-                file: path,
+                file: path.to_string_lossy().to_string(),
             })?;
         Ok(ExifExtractor { exif })
     }
@@ -80,7 +81,7 @@ impl ExifExtractor {
         self.get_float_value(exif::Tag::GPSAltitude)
     }
 
-    pub fn get_modification_date(&self) -> Result<chrono::NaiveDateTime, ClineupError> {
+    pub fn get_exif_date(&self) -> Result<chrono::NaiveDateTime, ClineupError> {
         let date = self
             .exif
             .get_field(exif::Tag::DateTimeOriginal, exif::In::PRIMARY);

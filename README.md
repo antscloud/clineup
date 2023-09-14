@@ -123,22 +123,28 @@ OPTIONS:
 ```
 ## Tags 
 
-| Tag                | Meaning                                |
-|--------------------|----------------------------------------|
-| %year              | Year of the modification date          |
-| %month             | Month of the modification date         |
-| %day               | Day of the modification date           |
-| %width             | Width of the media                     |
-| %height            | Height of the media                    |
-| %camera_model      | Camera model                           |
-| %camera_brand      | Camera brand                           |
-| %country           | Country where the photo was taken      |
-| %state             | State where the photo was taken        |
-| %county            | county where the photo was taken       |
-| %municipality      | municipality where the photo was taken |
-| %city              | city where the photo was taken         |
-| %original_folder   | Original folder where the media is     |
-| %original_filename | Original filename of the media         |
+| Tag                | Meaning                                     |
+|--------------------|---------------------------------------------|
+| %year              | Year of the modification date               |
+| %month             | Month of the modification date              |
+| %day               | Day of the modification date                |
+| %width             | Width of the media                          |
+| %height            | Height of the media                         |
+| %camera_model      | Camera model                                |
+| %camera_brand      | Camera brand                                |
+| %country           | Country where the photo was taken           |
+| %state             | State where the photo was taken             |
+| %county            | county where the photo was taken            |
+| %municipality      | municipality where the photo was taken      |
+| %city              | city where the photo was taken              |
+| %original_folder   | Original folder where the media is          |
+| %original_filename | Original filename of the media              |
+| %ctimeyear         | Year of the creation date of the media      |
+| %ctimemonth        | Month of the creation date of the media     |
+| %ctimeday          | Day of the creation date of the media       |
+| %mtimeyear         | Year of the modification date of the media  |
+| %mtimemonth        | Month of the modification date of the media |
+| %mtimeday          | Day of the modification date of the media   |
 
 ## Syntax
 

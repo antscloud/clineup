@@ -49,6 +49,9 @@ pub enum ClineupError {
 
     #[error("Invalid organization strategy: {0}")]
     InvalidOrganization(String),
+
+    #[error("Invalid placeholder mapping for {0} : It is likely to be a typo in implementation ")]
+    InvalidPlaceholderMapping(String),
 }
 
 impl From<exif::Error> for ClineupError {

@@ -6,6 +6,12 @@ pub enum Placeholder {
     Year,
     Month,
     Day,
+    CTimeYear,
+    CTimeMonth,
+    CTimeDay,
+    MTimeYear,
+    MTimeMonth,
+    MTimeDay,
     Width,
     Height,
     CameraModel,
@@ -29,6 +35,12 @@ impl Placeholder {
             "%year" => Placeholder::Year,
             "%month" => Placeholder::Month,
             "%day" => Placeholder::Day,
+            "%ctimeyear" => Placeholder::CTimeYear,
+            "%ctimemonth" => Placeholder::CTimeMonth,
+            "%ctimeday" => Placeholder::CTimeDay,
+            "%mtimeyear" => Placeholder::MTimeYear,
+            "%mtimemonth" => Placeholder::MTimeMonth,
+            "%mtimeday" => Placeholder::MTimeDay,
             "%width" => Placeholder::Width,
             "%height" => Placeholder::Height,
             "%camera_model" => Placeholder::CameraModel,
@@ -42,6 +54,45 @@ impl Placeholder {
             "%original_filename" => Placeholder::OriginalFilename,
             _ if format_string.starts_with("%") => Placeholder::Unknown,
             _ => Placeholder::Fallback,
+        }
+    }
+
+    pub fn is_exif_related(&self) -> bool {
+        match self {
+            Placeholder::Year
+            | Placeholder::Month
+            | Placeholder::Day
+            | Placeholder::Width
+            | Placeholder::Height
+            | Placeholder::CameraModel
+            | Placeholder::CameraBrand
+            | Placeholder::Country
+            | Placeholder::State
+            | Placeholder::County
+            | Placeholder::Municipality
+            | Placeholder::City => true,
+            _ => false,
+        }
+    }
+    pub fn is_os_related(&self) -> bool {
+        match self {
+            Placeholder::CTimeYear
+            | Placeholder::CTimeMonth
+            | Placeholder::CTimeDay
+            | Placeholder::MTimeYear
+            | Placeholder::MTimeMonth
+            | Placeholder::MTimeDay => true,
+            _ => false,
+        }
+    }
+    pub fn is_location_related(&self) -> bool {
+        match self {
+            Placeholder::Country
+            | Placeholder::State
+            | Placeholder::County
+            | Placeholder::Municipality
+            | Placeholder::City => true,
+            _ => false,
         }
     }
 }

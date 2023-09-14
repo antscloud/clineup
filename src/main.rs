@@ -105,9 +105,12 @@ pub fn get_organization_strategy(config: &Config) -> Option<Box<dyn Organization
         None => None,
     }
 }
+
 fn main() {
     let matches = parse_cli();
+
     set_log_level(matches.occurrences_of("verbose"));
+
     let config = get_cli_config(matches);
 
     let strategy = get_organization_strategy(&config);
@@ -162,6 +165,23 @@ fn main() {
     let mut dry_run_count = 0;
 
     for entry in files {
+        if config.drop_duplicates {
+            let is_duplicate = duplicates_finder.as_mut().unwrap().is_duplicate(&entry);
+
+            match is_duplicate {
+                Ok(is_duplicate) => {
+                    if is_duplicate {
+                        info!("Find duplicate {:?}", entry.display());
+                        continue;
+                    }
+                }
+                Err(err) => {
+                    error!("{}", err);
+                    continue;
+                }
+            }
+        }
+
         let formatted_path = path_formatter.get_formatted_path(&entry);
 
         let good_formatted_path = match formatted_path {
@@ -171,6 +191,7 @@ fn main() {
                 continue;
             }
         };
+
         debug!("Get formatted path {:?}", good_formatted_path);
 
         if config.dry_run {
@@ -180,26 +201,6 @@ fn main() {
             info!("{:?} -> {}", entry, good_formatted_path.display());
             dry_run_count += 1;
             continue;
-        }
-
-        if config.drop_duplicates {
-            let is_duplicate = duplicates_finder
-                .as_mut()
-                .unwrap()
-                .is_duplicate(&good_formatted_path);
-
-            match is_duplicate {
-                Ok(is_duplicate) => {
-                    if is_duplicate {
-                        info!("Find duplicate {:?}", good_formatted_path.display());
-                        continue;
-                    }
-                }
-                Err(err) => {
-                    error!("{}", err);
-                    continue;
-                }
-            }
         }
         strategy
             .as_ref()
