@@ -18,7 +18,7 @@ use std::path::PathBuf;
 /// # Returns
 ///
 /// `true` if the extension is allowed, `false` otherwise.
-fn is_allowed_extension(
+pub fn is_allowed_extension(
     entry: &PathBuf,
     extensions: &Option<Vec<String>>,
     exclude_extensions: &Option<Vec<String>>,
@@ -61,7 +61,7 @@ fn is_allowed_extension(
 /// # Returns
 ///
 /// A boolean value indicating whether the size of the file is allowed or not.
-fn is_allowed_size(
+pub fn is_allowed_size(
     entry: &PathBuf,
     size_lower: &Option<u64>,
     size_greater: &Option<u64>,
@@ -184,3 +184,4 @@ impl<'a> Iterator for FileIterator<'a> {
         None
     }
 }
+

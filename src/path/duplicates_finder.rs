@@ -11,7 +11,7 @@ use std::{collections::HashMap, fs::File, io::Read, path::PathBuf};
 /// # Returns
 ///
 /// The SHA256 hash of the file as a hexadecimal string, or an error if the hash calculation fails.
-fn get_hash_of_file(mut open_file: &File) -> Result<String, ClineupError> {
+pub fn get_hash_of_file(mut open_file: &File) -> Result<String, ClineupError> {
     let mut hasher = Sha256::new();
     let mut buffer = [0u8; 1024];
     loop {
