@@ -207,9 +207,9 @@ impl<'a, 'b> PathFormatter<'a, 'b> {
                     Placeholder::CameraModel => match exif_extractor
                         .as_ref()
                         .ok_or_else(|| {
-                            ClineupError::InvalidPlaceholderMapping("CameraModel".to_string())
+                            ClineupError::InvalidPlaceholderMapping("Model".to_string())
                         })?
-                        .get_exif_date()
+                        .get_camera_model()
                     {
                         Ok(v) => v.to_string(),
                         Err(_) => {
@@ -219,10 +219,8 @@ impl<'a, 'b> PathFormatter<'a, 'b> {
                     },
                     Placeholder::CameraBrand => match exif_extractor
                         .as_ref()
-                        .ok_or_else(|| {
-                            ClineupError::InvalidPlaceholderMapping("CameraBrand".to_string())
-                        })?
-                        .get_exif_date()
+                        .ok_or_else(|| ClineupError::InvalidPlaceholderMapping("Make".to_string()))?
+                        .get_camera_brand()
                     {
                         Ok(v) => v.to_string(),
                         Err(_) => {
