@@ -81,9 +81,9 @@ fn parse_curly_placeholder(iter: &mut std::iter::Peekable<std::str::Chars>) -> P
     }
 }
 
-pub fn parse_placeholders(raw_path: &str) -> HashMap<String, Vec<String>> {
+pub fn parse_placeholders(path_to_format: &str) -> HashMap<String, Vec<String>> {
     let mut placeholder_map: HashMap<String, Vec<String>> = HashMap::new();
-    let mut iter = raw_path.chars().peekable();
+    let mut iter = path_to_format.chars().peekable();
 
     while let Some(&c) = iter.peek() {
         match c {

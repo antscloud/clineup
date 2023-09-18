@@ -68,8 +68,8 @@ impl<'a, 'b> PathFormatter<'a, 'b> {
                 .get_location(lat, lon);
         }
 
-        let rounded_lat = round_float_to_nth_decimal_place(lat, 2);
-        let rounded_lon = round_float_to_nth_decimal_place(lon, 2);
+        let rounded_lat = round_float_to_nth_decimal_place(lat, 1);
+        let rounded_lon = round_float_to_nth_decimal_place(lon, 1);
         let string_lat_lon = StringLatLon(rounded_lat.to_string(), rounded_lon.to_string());
 
         if self.gps_positions.contains_key(&string_lat_lon) {
@@ -377,7 +377,7 @@ impl<'a, 'b> PathFormatter<'a, 'b> {
                         }
                     }
                     Placeholder::Fallback => placeholder_text.clone(),
-                    Placeholder::Unknown => continue,
+                    Placeholder::Unknown => placeholder_text.clone(),
                 };
                 result = current_result.clone();
                 if !is_fallback {
