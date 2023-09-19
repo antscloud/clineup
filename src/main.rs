@@ -1,16 +1,16 @@
 use clineup::cli::check_cli_config_from_placeholders;
 use clineup::cli::get_cli_config;
+use clineup::cli::init_logger;
 use clineup::cli::parse_cli;
-use clineup::cli::set_log_level;
 use clineup::path::duplicates_finder::DuplicatesFinder;
 use clineup::path::formatter::PathFormatter;
 use clineup::path::iterator::FileIterator;
 use clineup::path::parser::map_placeholders_to_enums;
 use clineup::path::parser::parse_placeholders;
-
 use clineup::utils::get_full_format_path;
 use clineup::utils::get_organization_strategy;
 use clineup::utils::get_reverse_geocoding;
+use indicatif::ProgressBar;
 use log::debug;
 use log::error;
 use log::info;
@@ -19,8 +19,12 @@ use std::process::exit;
 
 fn main() {
     let matches = parse_cli();
+    let verbosity = matches.occurrences_of("verbose");
 
-    set_log_level(matches.occurrences_of("verbose"));
+    init_logger(verbosity);
+
+    let bar = ProgressBar::new_spinner();
+    bar.set_message("Preparing transactions ...");
 
     let config = get_cli_config(matches);
 
@@ -73,8 +77,8 @@ fn main() {
     if config.dry_run {
         info!("Configuration \n{:?}", config)
     }
-    let mut dry_run_count = 0;
 
+    let mut file_processed_count = 0;
     for entry in files {
         if config.drop_duplicates {
             let is_duplicate = duplicates_finder.as_mut().unwrap().is_duplicate(&entry);
@@ -106,16 +110,23 @@ fn main() {
         debug!("Get formatted path {:?}", good_formatted_path);
 
         if config.dry_run {
-            if dry_run_count >= config.dry_run_number_of_files {
+            if file_processed_count >= config.dry_run_number_of_files {
                 exit(0);
             }
             info!("{:?} -> {}", entry, good_formatted_path.display());
-            dry_run_count += 1;
+            file_processed_count += 1;
             continue;
         }
+
         strategy
             .as_ref()
             .unwrap()
             .organize(&entry, &good_formatted_path);
+
+        file_processed_count += 1;
+
+        bar.set_message(format!("{:?} file processed", file_processed_count));
+        bar.tick();
     }
+    bar.finish_with_message(format!("Done. {:?} file processed.", file_processed_count));
 }

@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 #[derive(Debug, thiserror::Error)]
 pub enum ClineupError {
     #[error("IO error: {0}")]
@@ -34,6 +32,9 @@ pub enum ClineupError {
 
     #[error("There is no location placeholder")]
     NoLocationPlaceholderFound,
+
+    #[error("Unable to find {0} location")]
+    MissingLocation(String),
 
     #[error("Invalid size format : {0}")]
     InvalidSizeFormat(String),

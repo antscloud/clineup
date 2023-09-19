@@ -68,7 +68,8 @@ fn define_cli_parameters() -> App<'static, 'static> {
                 .long("extension")
                 .value_name("EXTENSION")
                 .help("Filters photos based on file extensions")
-                .takes_value(true),
+                .takes_value(true)
+                .multiple(true)
         )
         .arg(
             Arg::with_name("exclude-extension")
@@ -76,6 +77,7 @@ fn define_cli_parameters() -> App<'static, 'static> {
                 .value_name("EXTENSION")
                 .help("Excludes photos with the specified file extensions")
                 .takes_value(true)
+                .multiple(true)
         )
         .arg(
             Arg::with_name("include-regex")
@@ -130,6 +132,7 @@ fn define_cli_parameters() -> App<'static, 'static> {
         .arg(
             Arg::with_name("folder-format")
                 .long("folder-format")
+                .takes_value(true)
                 .help("Specifies the folder format to create"),
         )
         .arg(
@@ -213,13 +216,15 @@ fn convert_size_to_bytes(size: &str) -> Result<u64, ClineupError> {
     Err(ClineupError::InvalidSizeFormat(size.to_string()))
 }
 
-pub fn set_log_level(verbosity: u64) {
-    let level = match verbosity {
-        0 => LevelFilter::Info,
-        _ => LevelFilter::Debug,
-    };
+pub fn init_logger(verbosity: u64) {
+    if verbosity >= 1 {
+        let level = match verbosity {
+            1 => LevelFilter::Info,
+            _ => LevelFilter::Debug,
+        };
 
-    env_logger::builder().filter_level(level).init();
+        env_logger::builder().filter_level(level).init();
+    }
 }
 
 fn get_geocoding_enum(
@@ -296,12 +301,16 @@ pub fn get_cli_config(matches: clap::ArgMatches) -> Config {
         source: matches.value_of("source").unwrap().to_string(),
         destination: matches.value_of("destination").unwrap().to_string(),
         recursive: matches.is_present("recursive"),
-        extensions: matches
-            .values_of("extension")
-            .map(|values| values.map(|e| e.to_ascii_lowercase()).collect()),
-        exclude_extensions: matches
-            .values_of("exclude-extension")
-            .map(|values| values.map(|e| e.to_ascii_lowercase()).collect()),
+        extensions: matches.values_of("extension").map(|values| {
+            values
+                .map(|e| e.replace(".", "").to_ascii_lowercase())
+                .collect()
+        }),
+        exclude_extensions: matches.values_of("exclude-extension").map(|values| {
+            values
+                .map(|e| e.replace(".", "").to_ascii_lowercase())
+                .collect()
+        }),
         include_regex: include_regex,
         exclude_regex: exclude_regex,
         size_greater: size_greater,

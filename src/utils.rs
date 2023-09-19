@@ -88,7 +88,6 @@ pub fn get_full_format_path(
     filename_format: Option<&String>,
 ) -> Option<String> {
     let mut full_format: Option<PathBuf> = None;
-
     if let Some(_folder_format) = folder_format {
         let mut _full_format = Path::new(&_folder_format).to_path_buf();
         if let Some(_filename_format) = filename_format {

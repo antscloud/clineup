@@ -1,8 +1,10 @@
+use exif::Error as _ExifError;
 use log::debug;
+use log::warn;
 
 use crate::errors::ClineupError;
+use crate::exif_extractor;
 use crate::exif_extractor::ExifExtractor;
-use crate::gps;
 use crate::gps::base::GpsResolutionProvider;
 use crate::gps::location::LocationInfo;
 
@@ -11,7 +13,6 @@ use crate::utils::is_there_a_exif_placeholder;
 use crate::utils::is_there_a_location_placeholder;
 use crate::utils::is_there_a_metadata_placeholder;
 use chrono::prelude::{DateTime, Local};
-use std::cell::Cell;
 use std::collections::HashMap;
 use std::path::Path;
 use std::path::PathBuf;
@@ -19,6 +20,30 @@ use std::path::PathBuf;
 pub fn get_fallback_name(which: &str) -> String {
     format!("Unknown {}", which)
 }
+
+macro_rules! handle_placeholder {
+    ($provider:expr, $placeholder:expr, $fallback_name:expr, $formatter:expr, $is_fallback:ident) => {
+        match $provider
+            .as_ref()
+            .ok_or_else(|| ClineupError::InvalidPlaceholderMapping($placeholder.to_string()))?
+        {
+            Ok(v) => match $formatter(v) {
+                Ok(result) => result,
+                Err(err) => {
+                    warn!("{}", err);
+                    $is_fallback = true;
+                    get_fallback_name($fallback_name)
+                }
+            },
+            Err(err) => {
+                warn!("{}", err);
+                $is_fallback = true;
+                get_fallback_name($fallback_name)
+            }
+        }
+    };
+}
+
 // Define a custom key type that wraps the (f32, f32) tuple
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 struct StringLatLon(String, String);
@@ -108,30 +133,28 @@ impl<'a, 'b> PathFormatter<'a, 'b> {
         let mut formatted_path = String::from(self.path_to_format.clone());
 
         let file_metadata = if is_there_a_metadata_placeholder(self.placeholders) {
-            let _file_metadata = self.get_file_metadata(path);
-            match _file_metadata {
-                Ok(v) => Some(v),
-                Err(e) => return Err(e),
-            }
+            Some(self.get_file_metadata(path))
         } else {
             None
         };
 
         let exif_extractor = if is_there_a_exif_placeholder(self.placeholders) {
-            let _exif_extractor = ExifExtractor::new(path);
-            match _exif_extractor {
-                Ok(v) => Some(v),
-                Err(e) => return Err(e),
-            }
+            Some(ExifExtractor::new(path))
         } else {
             None
         };
 
         let location = if is_there_a_location_placeholder(self.placeholders) {
-            let _location = self.get_location_info(exif_extractor.as_ref().unwrap());
-            match _location {
-                Ok(v) => Some(v),
-                Err(e) => return Err(e),
+            if let Some(result) = &exif_extractor {
+                match result {
+                    Ok(v) => Some(self.get_location_info(&v)),
+                    Err(_) => Some(Err(ClineupError::ExifError {
+                        source: _ExifError::NotFound("No exif data found"),
+                        file: path.to_string_lossy().to_string(),
+                    })),
+                }
+            } else {
+                None
             }
         } else {
             None
@@ -143,219 +166,196 @@ impl<'a, 'b> PathFormatter<'a, 'b> {
 
             for (placeholder_text, placeholder) in placeholders {
                 let current_result = match placeholder {
-                    Placeholder::Year => match exif_extractor
-                        .as_ref()
-                        .ok_or_else(|| ClineupError::InvalidPlaceholderMapping("Year".to_string()))?
-                        .get_exif_date()
-                    {
-                        Ok(v) => v.format("%Y").to_string(),
-                        Err(_) => {
-                            is_fallback = true;
-                            get_fallback_name("Year")
-                        }
-                    },
-                    Placeholder::Month => match exif_extractor
-                        .as_ref()
-                        .ok_or_else(|| {
-                            ClineupError::InvalidPlaceholderMapping("Month".to_string())
-                        })?
-                        .get_exif_date()
-                    {
-                        Ok(v) => v.format("%m").to_string(),
-                        Err(_) => {
-                            is_fallback = true;
-                            get_fallback_name("Month")
-                        }
-                    },
-                    Placeholder::Day => match exif_extractor
-                        .as_ref()
-                        .ok_or_else(|| ClineupError::InvalidPlaceholderMapping("Day".to_string()))?
-                        .get_exif_date()
-                    {
-                        Ok(v) => v.format("%d").to_string(),
-                        Err(_) => {
-                            is_fallback = true;
-                            get_fallback_name("Day")
-                        }
-                    },
-                    Placeholder::Width => match exif_extractor
-                        .as_ref()
-                        .ok_or_else(|| {
-                            ClineupError::InvalidPlaceholderMapping("Width".to_string())
-                        })?
-                        .get_exif_date()
-                    {
-                        Ok(v) => v.to_string(),
-                        Err(_) => {
-                            is_fallback = true;
-                            get_fallback_name("Width")
-                        }
-                    },
-                    Placeholder::Height => match exif_extractor
-                        .as_ref()
-                        .ok_or_else(|| {
-                            ClineupError::InvalidPlaceholderMapping("Height".to_string())
-                        })?
-                        .get_exif_date()
-                    {
-                        Ok(v) => v.to_string(),
-                        Err(_) => {
-                            is_fallback = true;
-                            get_fallback_name("Height")
-                        }
-                    },
-                    Placeholder::CameraModel => match exif_extractor
-                        .as_ref()
-                        .ok_or_else(|| {
-                            ClineupError::InvalidPlaceholderMapping("Model".to_string())
-                        })?
-                        .get_camera_model()
-                    {
-                        Ok(v) => v.to_string(),
-                        Err(_) => {
-                            is_fallback = true;
-                            get_fallback_name("Camera Model")
-                        }
-                    },
-                    Placeholder::CameraBrand => match exif_extractor
-                        .as_ref()
-                        .ok_or_else(|| ClineupError::InvalidPlaceholderMapping("Make".to_string()))?
-                        .get_camera_brand()
-                    {
-                        Ok(v) => v.to_string(),
-                        Err(_) => {
-                            is_fallback = true;
-                            get_fallback_name("Camera Brand")
-                        }
-                    },
-                    Placeholder::CTimeYear => match &file_metadata {
-                        Some(v) => {
-                            let sys_modified = v.clone().created()?;
-                            let datetime = DateTime::<Local>::from(sys_modified);
-                            datetime.format("%Y").to_string()
-                        }
-                        None => {
-                            is_fallback = true;
-                            get_fallback_name("Creation Time Year")
-                        }
-                    },
-                    Placeholder::CTimeMonth => match &file_metadata {
-                        Some(v) => {
-                            let sys_modified = v.clone().created()?;
-                            let datetime = DateTime::<Local>::from(sys_modified);
-                            datetime.format("%m").to_string()
-                        }
-                        None => {
-                            is_fallback = true;
-                            get_fallback_name("Creation Time Month")
-                        }
-                    },
-                    Placeholder::CTimeDay => match &file_metadata {
-                        Some(v) => {
-                            let sys_modified = v.clone().created()?;
-                            let datetime = DateTime::<Local>::from(sys_modified);
-                            datetime.format("%d").to_string()
-                        }
-                        None => {
-                            is_fallback = true;
-                            get_fallback_name("Creation Time Day")
-                        }
-                    },
-                    Placeholder::MTimeYear => match &file_metadata {
-                        Some(v) => {
-                            let sys_modified = v.clone().modified()?;
-                            let datetime = DateTime::<Local>::from(sys_modified);
-                            datetime.format("%Y").to_string()
-                        }
-                        None => {
-                            is_fallback = true;
-                            get_fallback_name("Modification Time Year")
-                        }
-                    },
-                    Placeholder::MTimeMonth => match &file_metadata {
-                        Some(v) => {
-                            let sys_modified = v.clone().modified()?;
-                            let datetime = DateTime::<Local>::from(sys_modified);
-                            datetime.format("%m").to_string()
-                        }
-                        None => {
-                            is_fallback = true;
-                            get_fallback_name("Modification Time Month")
-                        }
-                    },
-                    Placeholder::MTimeDay => match &file_metadata {
-                        Some(v) => {
-                            let sys_modified = v.clone().modified()?;
-                            let datetime = DateTime::<Local>::from(sys_modified);
-                            datetime.format("%d").to_string()
-                        }
-                        None => {
-                            is_fallback = true;
-                            get_fallback_name("Modification Time Day")
-                        }
-                    },
-                    Placeholder::Country => match location.as_ref() {
-                        Some(v) => v
-                            .country()
-                            .map(|m| m.to_string())
-                            .unwrap_or_else(|| {
-                                is_fallback = true;
-                                get_fallback_name("Country")
-                            })
-                            .to_string(),
-                        None => {
-                            is_fallback = true;
-                            get_fallback_name("Country")
-                        }
-                    },
-                    Placeholder::State => match location.as_ref() {
-                        Some(v) => v
-                            .state()
-                            .map(|m| m.to_string())
-                            .unwrap_or_else(|| {
-                                is_fallback = true;
-                                get_fallback_name("State")
-                            })
-                            .to_string(),
-                        None => {
-                            is_fallback = true;
-                            get_fallback_name("State")
-                        }
-                    },
-                    Placeholder::City => match location.as_ref() {
-                        Some(v) => v
-                            .city()
-                            .map(|m| m.to_string())
-                            .unwrap_or_else(|| {
-                                is_fallback = true;
-                                get_fallback_name("City")
-                            })
-                            .to_string(),
-                        None => {
-                            is_fallback = true;
-                            get_fallback_name("City")
-                        }
-                    },
-                    Placeholder::County => match location.as_ref() {
-                        Some(v) => v.county().map(|m| m.to_string()).unwrap_or_else(|| {
-                            is_fallback = true;
-                            get_fallback_name("County")
-                        }),
-                        None => {
-                            is_fallback = true;
-                            get_fallback_name("County")
-                        }
-                    },
-                    Placeholder::Municipality => match location.as_ref() {
-                        Some(v) => v.municipality().map(|m| m.to_string()).unwrap_or_else(|| {
-                            is_fallback = true;
-                            get_fallback_name("Municipality")
-                        }),
-                        None => {
-                            is_fallback = true;
-                            get_fallback_name("Municipality")
-                        }
-                    },
+                    Placeholder::Year => {
+                        handle_placeholder!(
+                            exif_extractor,
+                            "Year",
+                            "Year",
+                            |v: &ExifExtractor| {
+                                v.get_exif_date().map(|date| date.format("%Y").to_string())
+                            },
+                            is_fallback
+                        )
+                    }
+                    Placeholder::Month => {
+                        handle_placeholder!(
+                            exif_extractor,
+                            "Month",
+                            "Month",
+                            |v: &ExifExtractor| {
+                                v.get_exif_date().map(|date| date.format("%m").to_string())
+                            },
+                            is_fallback
+                        )
+                    }
+                    Placeholder::Day => {
+                        handle_placeholder!(
+                            exif_extractor,
+                            "Day",
+                            "Day",
+                            |v: &ExifExtractor| {
+                                v.get_exif_date().map(|date| date.format("%d").to_string())
+                            },
+                            is_fallback
+                        )
+                    }
+                    Placeholder::Width => {
+                        handle_placeholder!(
+                            exif_extractor,
+                            "Width",
+                            "Width",
+                            |v: &ExifExtractor| { v.get_width().map(|width| width.to_string()) },
+                            is_fallback
+                        )
+                    }
+                    Placeholder::Height => {
+                        handle_placeholder!(
+                            exif_extractor,
+                            "Height",
+                            "Height",
+                            |v: &ExifExtractor| { v.get_height().map(|height| height.to_string()) },
+                            is_fallback
+                        )
+                    }
+                    Placeholder::CameraModel => {
+                        handle_placeholder!(
+                            exif_extractor,
+                            "Camera Model",
+                            "Camera Model",
+                            |v: &ExifExtractor| {
+                                v.get_camera_model().map(|model| model.to_string())
+                            },
+                            is_fallback
+                        )
+                    }
+                    Placeholder::CameraBrand => {
+                        handle_placeholder!(
+                            exif_extractor,
+                            "Camera Brand",
+                            "Camera Brand",
+                            |v: &ExifExtractor| {
+                                v.get_camera_brand().map(|brand| brand.to_string())
+                            },
+                            is_fallback
+                        )
+                    }
+                    Placeholder::CTimeYear => handle_placeholder!(
+                        file_metadata.as_ref(),
+                        "CTimeYear",
+                        "Creation Time Year",
+                        |v: &std::fs::Metadata| {
+                            v.created()
+                                .map(|date| DateTime::<Local>::from(date).format("%Y").to_string())
+                        },
+                        is_fallback
+                    ),
+                    Placeholder::CTimeMonth => handle_placeholder!(
+                        file_metadata.as_ref(),
+                        "CTimeMonth",
+                        "Creation Time Month",
+                        |v: &std::fs::Metadata| {
+                            v.clone()
+                                .created()
+                                .map(|date| DateTime::<Local>::from(date).format("%m").to_string())
+                        },
+                        is_fallback
+                    ),
+                    Placeholder::CTimeDay => handle_placeholder!(
+                        file_metadata.as_ref(),
+                        "CTimeDay",
+                        "Creation Time Day",
+                        |v: &std::fs::Metadata| {
+                            v.clone()
+                                .created()
+                                .map(|date| DateTime::<Local>::from(date).format("%d").to_string())
+                        },
+                        is_fallback
+                    ),
+                    Placeholder::MTimeYear => handle_placeholder!(
+                        file_metadata.as_ref(),
+                        "MTimeYear",
+                        "Modification Time Year",
+                        |v: &std::fs::Metadata| {
+                            v.modified()
+                                .map(|date| DateTime::<Local>::from(date).format("%Y").to_string())
+                        },
+                        is_fallback
+                    ),
+                    Placeholder::MTimeMonth => handle_placeholder!(
+                        file_metadata.as_ref(),
+                        "MTimeMonth",
+                        "Modification Time Month",
+                        |v: &std::fs::Metadata| {
+                            v.modified()
+                                .map(|date| DateTime::<Local>::from(date).format("%m").to_string())
+                        },
+                        is_fallback
+                    ),
+                    Placeholder::MTimeDay => handle_placeholder!(
+                        file_metadata.as_ref(),
+                        "MTimeDay",
+                        "Modification Time Day",
+                        |v: &std::fs::Metadata| {
+                            v.modified()
+                                .map(|date| DateTime::<Local>::from(date).format("%d").to_string())
+                        },
+                        is_fallback
+                    ),
+                    Placeholder::Country => handle_placeholder!(
+                        location.as_ref(),
+                        "Country",
+                        "Country",
+                        |v: &LocationInfo| {
+                            v.country()
+                                .ok_or(ClineupError::MissingLocation("Country".to_string()))
+                                .map(|v| v.to_string())
+                        },
+                        is_fallback
+                    ),
+                    Placeholder::State => handle_placeholder!(
+                        location.as_ref(),
+                        "State",
+                        "State",
+                        |v: &LocationInfo| {
+                            v.state()
+                                .ok_or(ClineupError::MissingLocation("Country".to_string()))
+                                .map(|v| v.to_string())
+                        },
+                        is_fallback
+                    ),
+                    Placeholder::City => handle_placeholder!(
+                        location.as_ref(),
+                        "City",
+                        "City",
+                        |v: &LocationInfo| {
+                            v.city()
+                                .ok_or(ClineupError::MissingLocation("City".to_string()))
+                                .map(|v| v.to_string())
+                        },
+                        is_fallback
+                    ),
+                    Placeholder::County => handle_placeholder!(
+                        location.as_ref(),
+                        "County",
+                        "County",
+                        |v: &LocationInfo| {
+                            v.county()
+                                .ok_or(ClineupError::MissingLocation("County".to_string()))
+                                .map(|v| v.to_string())
+                        },
+                        is_fallback
+                    ),
+                    Placeholder::Municipality => handle_placeholder!(
+                        location.as_ref(),
+                        "Municipality",
+                        "Municipality",
+                        |v: &LocationInfo| {
+                            v.municipality()
+                                .ok_or(ClineupError::MissingLocation("Municipality".to_string()))
+                                .map(|v| v.to_string())
+                        },
+                        is_fallback
+                    ),
                     Placeholder::OriginalFilename => {
                         if let Some(_path) = path.file_name() {
                             _path.to_string_lossy().to_string()
@@ -379,6 +379,7 @@ impl<'a, 'b> PathFormatter<'a, 'b> {
                     Placeholder::Fallback => placeholder_text.clone(),
                     Placeholder::Unknown => placeholder_text.clone(),
                 };
+
                 result = current_result.clone();
                 if !is_fallback {
                     break;

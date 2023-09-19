@@ -1,6 +1,7 @@
 use crate::cli::Config;
 use crate::errors::ClineupError;
 use glob::glob;
+use log::debug;
 use log::info;
 use log::warn;
 
@@ -24,14 +25,14 @@ pub fn is_allowed_extension(
     exclude_extensions: &Option<Vec<String>>,
 ) -> bool {
     let extension = match entry.extension() {
-        Some(ext) => ext.to_string_lossy().to_string(),
+        Some(ext) => ext.to_string_lossy().to_ascii_lowercase().to_string(),
         None => return false,
     };
 
     // Check if the extension is in the allowed list.
     if let Some(exts) = extensions {
         if !exts.contains(&extension) {
-            info!(
+            debug!(
                 "File extension \"{}\" of {:?} is not in the allowed list",
                 extension, entry
             );
@@ -42,7 +43,7 @@ pub fn is_allowed_extension(
     // Check if the extension is in the excluded list.
     if let Some(exclude_exts) = exclude_extensions {
         if exclude_exts.contains(&extension) {
-            info!("File extension {} is in the excluded list", extension);
+            debug!("File extension {} is in the excluded list", extension);
             return false;
         }
     }
@@ -71,14 +72,14 @@ pub fn is_allowed_size(
     // Check if the file size is greater than the desired lower size
     if let Some(size_lt) = size_lower {
         if metadata.len() > *size_lt {
-            info!("File size is greater than {size_lt}");
+            debug!("File size is greater than {size_lt}");
             return Ok(false);
         }
     }
     // Check if the file size is lower than the desired greater size
     if let Some(size_gt) = size_greater {
         if metadata.len() < *size_gt {
-            info!("File size is lower than {size_gt}");
+            debug!("File size is lower than {size_gt}");
             return Ok(false);
         }
     }
@@ -184,4 +185,3 @@ impl<'a> Iterator for FileIterator<'a> {
         None
     }
 }
-
