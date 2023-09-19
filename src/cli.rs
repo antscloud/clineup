@@ -185,7 +185,7 @@ fn convert_size_to_bytes(size: &str) -> Result<u64, ClineupError> {
 
     if let Some(capture) = re.captures(size) {
         if let Some(number_str) = capture.name("number") {
-            if number_str.len() == 0 {
+            if number_str.is_empty() {
                 return Err(ClineupError::InvalidSizeFormat(size.to_string()));
             }
 
@@ -195,7 +195,7 @@ fn convert_size_to_bytes(size: &str) -> Result<u64, ClineupError> {
                 .map_err(|_| ClineupError::InvalidNumberFormat(number_str.as_str().to_string()))?;
 
             if let Some(unit) = capture.name("unit") {
-                if unit.len() == 0 {
+                if unit.is_empty() {
                     return Err(ClineupError::InvalidSizeFormat(size.to_string()));
                 }
                 let unit_str = unit.as_str();
@@ -255,14 +255,14 @@ fn get_strategy_enum(_enum: Option<&str>) -> Result<Option<OrganizationMode>, Cl
 }
 fn get_size_greater(size_greater: Option<&str>) -> Result<Option<u64>, ClineupError> {
     if let Some(size_gt) = size_greater {
-        convert_size_to_bytes(size_gt).map(|r| Some(r))
+        convert_size_to_bytes(size_gt).map(Some)
     } else {
         Ok(None)
     }
 }
 fn get_size_lower(size_lower: Option<&str>) -> Result<Option<u64>, ClineupError> {
     if let Some(size_lt) = size_lower {
-        convert_size_to_bytes(size_lt).map(|r| Some(r))
+        convert_size_to_bytes(size_lt).map(Some)
     } else {
         Ok(None)
     }
@@ -303,18 +303,18 @@ pub fn get_cli_config(matches: clap::ArgMatches) -> Config {
         recursive: matches.is_present("recursive"),
         extensions: matches.values_of("extension").map(|values| {
             values
-                .map(|e| e.replace(".", "").to_ascii_lowercase())
+                .map(|e| e.replace('.', "").to_ascii_lowercase())
                 .collect()
         }),
         exclude_extensions: matches.values_of("exclude-extension").map(|values| {
             values
-                .map(|e| e.replace(".", "").to_ascii_lowercase())
+                .map(|e| e.replace('.', "").to_ascii_lowercase())
                 .collect()
         }),
-        include_regex: include_regex,
-        exclude_regex: exclude_regex,
-        size_greater: size_greater,
-        size_lower: size_lower,
+        include_regex,
+        exclude_regex,
+        size_greater,
+        size_lower,
         dry_run: matches.is_present("dry-run"),
         dry_run_number_of_files: dry_number_of_files,
         log_file: matches.value_of("log").map(|log| log.to_string()),
@@ -339,10 +339,8 @@ pub fn check_cli_config_from_placeholders(
     config: &Config,
     placeholders: &HashMap<String, HashMap<String, Placeholder>>,
 ) {
-    if is_there_a_location_placeholder(placeholders) {
-        if config.reverse_geocoding.is_none() {
-            error!("Location tag found but reverse geocoding provider is not set");
-            exit(1)
-        }
+    if is_there_a_location_placeholder(placeholders) && config.reverse_geocoding.is_none() {
+        error!("Location tag found but reverse geocoding provider is not set");
+        exit(1)
     }
 }

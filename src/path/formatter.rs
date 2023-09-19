@@ -3,7 +3,7 @@ use log::debug;
 use log::warn;
 
 use crate::errors::ClineupError;
-use crate::exif_extractor;
+
 use crate::exif_extractor::ExifExtractor;
 use crate::gps::base::GpsResolutionProvider;
 use crate::gps::location::LocationInfo;
@@ -82,8 +82,8 @@ impl<'a, 'b> PathFormatter<'a, 'b> {
         &mut self,
         exif_extractor: &ExifExtractor,
     ) -> Result<LocationInfo, ClineupError> {
-        let lat = exif_extractor.get_latitude()?.clone();
-        let lon = exif_extractor.get_longitude()?.clone();
+        let lat = exif_extractor.get_latitude()?;
+        let lon = exif_extractor.get_longitude()?;
 
         if !self.optimize_gps {
             return self
@@ -112,25 +112,24 @@ impl<'a, 'b> PathFormatter<'a, 'b> {
             Ok(v) => {
                 debug!("Store location {:?}", v);
                 self.gps_positions.insert(string_lat_lon, v.clone());
-                return Ok(v);
+                Ok(v)
             }
-            Err(_) => return Err(ClineupError::LatOrLonMissing),
-        };
+            Err(_) => Err(ClineupError::LatOrLonMissing),
+        }
     }
 
     fn get_file_metadata(&self, path: &PathBuf) -> Result<std::fs::Metadata, ClineupError> {
-        let metadata = if is_there_a_metadata_placeholder(&self.placeholders) {
-            std::fs::metadata(path).map_err(|e| ClineupError::from(e))
+        if is_there_a_metadata_placeholder(self.placeholders) {
+            std::fs::metadata(path).map_err(ClineupError::from)
         } else {
             Err(ClineupError::NoLocationPlaceholderFound)
-        };
-        metadata
+        }
     }
 }
 
 impl<'a, 'b> PathFormatter<'a, 'b> {
     pub fn get_formatted_path(&mut self, path: &PathBuf) -> Result<PathBuf, ClineupError> {
-        let mut formatted_path = String::from(self.path_to_format.clone());
+        let mut formatted_path = self.path_to_format.clone();
 
         let file_metadata = if is_there_a_metadata_placeholder(self.placeholders) {
             Some(self.get_file_metadata(path))
@@ -147,7 +146,7 @@ impl<'a, 'b> PathFormatter<'a, 'b> {
         let location = if is_there_a_location_placeholder(self.placeholders) {
             if let Some(result) = &exif_extractor {
                 match result {
-                    Ok(v) => Some(self.get_location_info(&v)),
+                    Ok(v) => Some(self.get_location_info(v)),
                     Err(_) => Some(Err(ClineupError::ExifError {
                         source: _ExifError::NotFound("No exif data found"),
                         file: path.to_string_lossy().to_string(),

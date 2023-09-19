@@ -23,17 +23,17 @@ mod tests {
         // Test case: Non-duplicate file
         let path1 = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/data/Paris-20230304.jpg");
         let is_duplicate1 = duplicates_finder.is_duplicate(&path1).unwrap();
-        assert_eq!(is_duplicate1, false);
+        assert!(!is_duplicate1);
 
         // Test case: Duplicate file with same size and hash
         let path2 = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/data/London.png");
         let is_duplicate2 = duplicates_finder.is_duplicate(&path2).unwrap();
-        assert_eq!(is_duplicate2, false);
+        assert!(!is_duplicate2);
 
         // Test case: Duplicate file with same size but different hash
         let path3 = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .join("tests/data/Paris-20230304-duplicated.jpg");
         let is_duplicate3 = duplicates_finder.is_duplicate(&path3).unwrap();
-        assert_eq!(is_duplicate3, true);
+        assert!(is_duplicate3);
     }
 }

@@ -52,7 +52,7 @@ impl Placeholder {
             "%city" => Placeholder::City,
             "%original_folder" => Placeholder::OriginalFolder,
             "%original_filename" => Placeholder::OriginalFilename,
-            _ if format_string.starts_with("%") => Placeholder::Unknown,
+            _ if format_string.starts_with('%') => Placeholder::Unknown,
             _ => Placeholder::Fallback,
         }
     }

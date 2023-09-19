@@ -6,7 +6,7 @@ use std::os::unix::fs::symlink;
 #[cfg(target_family = "windows")]
 use std::os::windows::fs::symlink_file;
 
-use std::path::PathBuf;
+use std::path::Path;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub enum OrganizationMode {
@@ -16,7 +16,7 @@ pub enum OrganizationMode {
 }
 
 pub trait OrganizationStrategy {
-    fn organize(&self, _original_file: &PathBuf, _destination: &PathBuf) {}
+    fn organize(&self, _original_file: &Path, _destination: &Path) {}
 }
 
 pub struct CopyStrategy {}
@@ -25,8 +25,13 @@ impl CopyStrategy {
         CopyStrategy {}
     }
 }
+impl Default for CopyStrategy {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 impl OrganizationStrategy for CopyStrategy {
-    fn organize(&self, original_file: &PathBuf, destination: &PathBuf) {
+    fn organize(&self, original_file: &Path, destination: &Path) {
         info!(
             "Copying {} to {}",
             original_file.display(),
@@ -56,9 +61,13 @@ impl SymlinksStrategy {
         SymlinksStrategy {}
     }
 }
-
+impl Default for SymlinksStrategy {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 #[cfg(target_family = "unix")]
-fn make_symlink(original_file: &PathBuf, destination: &PathBuf) {
+fn make_symlink(original_file: &Path, destination: &Path) {
     let symlink_result = symlink(original_file, destination);
     match symlink_result {
         Ok(_) => info!("File symlinked successfully"),
@@ -66,7 +75,7 @@ fn make_symlink(original_file: &PathBuf, destination: &PathBuf) {
     }
 }
 #[cfg(target_family = "windows")]
-fn make_symlink(original_file: &PathBuf, destination: &PathBuf) {
+fn make_symlink(original_file: &Path, destination: &Path) {
     let symlink_result = symlink_file(original_file, destination);
     match symlink_result {
         Ok(_) => info!("File symlinked successfully"),
@@ -74,7 +83,7 @@ fn make_symlink(original_file: &PathBuf, destination: &PathBuf) {
     }
 }
 impl OrganizationStrategy for SymlinksStrategy {
-    fn organize(&self, original_file: &PathBuf, destination: &PathBuf) {
+    fn organize(&self, original_file: &Path, destination: &Path) {
         info!(
             "Symlinking {} to {}",
             destination.display(),
@@ -99,8 +108,13 @@ impl MoveStrategy {
         MoveStrategy {}
     }
 }
+impl Default for MoveStrategy {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 impl OrganizationStrategy for MoveStrategy {
-    fn organize(&self, original_file: &PathBuf, destination: &PathBuf) {
+    fn organize(&self, original_file: &Path, destination: &Path) {
         info!(
             "Moving {} to {}",
             original_file.display(),

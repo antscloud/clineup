@@ -9,7 +9,7 @@ pub struct ExifExtractor {
 
 impl ExifExtractor {
     pub fn new(path: &PathBuf) -> Result<Self, ClineupError> {
-        let fd = std::fs::File::open(&path)?;
+        let fd = std::fs::File::open(path)?;
         let mut bufreader = std::io::BufReader::new(&fd);
         let exifreader = exif::Reader::new();
         let exif = exifreader
@@ -57,7 +57,7 @@ impl ExifExtractor {
 
     pub fn get_string_value(&self, tag: exif::Tag) -> Result<String, ClineupError> {
         if let Some(field) = self.exif.get_field(tag, exif::In::PRIMARY) {
-            let value = field.display_value().to_string().replace("\"", "");
+            let value = field.display_value().to_string().replace('\"', "");
             let components: Vec<&str> = value.split(',').map(str::trim).collect();
             let concatenated_value = components.join("");
             if !concatenated_value.is_empty() {

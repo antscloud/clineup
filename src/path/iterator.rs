@@ -2,7 +2,7 @@ use crate::cli::Config;
 use crate::errors::ClineupError;
 use glob::glob;
 use log::debug;
-use log::info;
+
 use log::warn;
 
 use std::fs;
@@ -98,12 +98,12 @@ pub fn is_allowed_size(
 /// # Returns
 ///
 /// The generated glob pattern as a `String`.
-fn get_glob_pattern(source: &String, recursive: &bool) -> String {
-    let mut source = source.clone();
+fn get_glob_pattern(source: &str, recursive: &bool) -> String {
+    let mut source = source.to_owned();
     if *recursive {
         source.push_str("**/*");
     } else {
-        source.push_str("*");
+        source.push('*');
     }
 
     source
@@ -119,7 +119,7 @@ impl<'a> FileIterator<'a> {
         let source = get_glob_pattern(&config.source, &config.recursive);
 
         let entries = glob(&source)
-            .expect(format!("Failed to iterate through source pattern {source}").as_str());
+            .unwrap_or_else(|_| panic!("Failed to iterate through source pattern {source}"));
 
         FileIterator { entries, config }
     }
@@ -129,7 +129,7 @@ impl<'a> Iterator for FileIterator<'a> {
     type Item = PathBuf;
 
     fn next(&mut self) -> Option<Self::Item> {
-        while let Some(entry) = self.entries.next() {
+        for entry in self.entries.by_ref() {
             match entry {
                 Err(err) => {
                     warn!("Unable to get entry: {:?}", err);

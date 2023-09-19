@@ -38,8 +38,8 @@ mod tests {
 
         let result = is_allowed_size(&path, &size_lower, &size_greater);
 
-        assert_eq!(result.is_err(), false);
-        assert_eq!(result.unwrap(), false);
+        assert!(result.is_ok());
+        assert!(!result.unwrap());
     }
 
     #[test]
@@ -50,8 +50,8 @@ mod tests {
 
         let result = is_allowed_size(&path, &size_lower, &size_greater);
 
-        assert_eq!(result.is_err(), false);
-        assert_eq!(result.unwrap(), false);
+        assert!(result.is_ok());
+        assert!(!result.unwrap());
     }
 
     #[test]
@@ -62,7 +62,7 @@ mod tests {
 
         let result = is_allowed_size(&path, &size_lower, &size_greater);
 
-        assert_eq!(result.is_err(), false);
-        assert_eq!(result.unwrap(), true);
+        assert!(result.is_ok());
+        assert!(result.unwrap());
     }
 }

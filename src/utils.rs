@@ -23,9 +23,9 @@ pub fn is_there_a_exif_placeholder(
 ) -> bool {
     let mut is_there_a_date_placeholder = false;
 
-    for (_, placeholders) in placeholders {
-        for (_, placeholder) in placeholders {
-            if placeholder.is_exif_related() {
+    for _placeholders in placeholders.values() {
+        for _placeholder in _placeholders.values() {
+            if _placeholder.is_exif_related() {
                 is_there_a_date_placeholder = true;
                 break;
             }
@@ -41,9 +41,9 @@ pub fn is_there_a_metadata_placeholder(
     placeholders: &HashMap<String, HashMap<String, Placeholder>>,
 ) -> bool {
     let mut is_there_a_metadata_placeholder = false;
-    for (_, placeholders) in placeholders {
-        for (_, placeholder) in placeholders {
-            if placeholder.is_os_related() {
+    for _placeholders in placeholders.values() {
+        for _placeholder in _placeholders.values() {
+            if _placeholder.is_os_related() {
                 is_there_a_metadata_placeholder = true;
                 break;
             }
@@ -57,9 +57,9 @@ pub fn is_there_a_location_placeholder(
     placeholders: &HashMap<String, HashMap<String, Placeholder>>,
 ) -> bool {
     let mut is_there_a_location_placeholder = false;
-    for (_, placeholders) in placeholders {
-        for (_, placeholder) in placeholders {
-            if placeholder.is_location_related() {
+    for _placeholders in placeholders.values() {
+        for _placeholder in _placeholders.values() {
+            if _placeholder.is_location_related() {
                 is_there_a_location_placeholder = true;
                 break;
             }

@@ -50,7 +50,7 @@ fn main() {
     }
 
     debug!("Parsing placeholders");
-    let _placeholders = parse_placeholders(&full_path.as_ref().unwrap());
+    let _placeholders = parse_placeholders(full_path.as_ref().unwrap());
     let placeholders = map_placeholders_to_enums(&_placeholders);
     check_cli_config_from_placeholders(&config, &placeholders);
 

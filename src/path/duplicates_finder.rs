@@ -43,6 +43,11 @@ impl DuplicatesFinder {
     }
 }
 
+impl Default for DuplicatesFinder {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 /// Checks if the given path is a duplicate file by detecting its
 /// precence in the hashmap.Otherwise store the hash of the file in the hashmap
 ///
@@ -69,8 +74,9 @@ impl DuplicatesFinder {
         let open_file = File::open(path)?;
         let hash_of_file = get_hash_of_file(&open_file)?;
 
-        if !self._duplicates.contains_key(&metadata.len()) {
-            self._duplicates.insert(metadata.len(), vec![hash_of_file]);
+        if let std::collections::hash_map::Entry::Vacant(e) = self._duplicates.entry(metadata.len())
+        {
+            e.insert(vec![hash_of_file]);
             return Ok(false);
         }
 

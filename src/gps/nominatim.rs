@@ -30,7 +30,7 @@ impl BlockingProvider for NominatimProvider {
         lon: f32,
     ) -> Result<reqwest::blocking::Response, ClineupError> {
         let client = reqwest::blocking::Client::new();
-        let response = client
+        client
             .get(self.url.clone())
             .query(&[
                 ("lat", lat.to_string()),
@@ -40,8 +40,7 @@ impl BlockingProvider for NominatimProvider {
             ])
             .header("User-Agent", self.email.clone())
             .send()
-            .map_err(|err| ClineupError::ReqwestError(err));
-        response
+            .map_err(ClineupError::ReqwestError)
     }
 }
 
@@ -191,9 +190,9 @@ mod tests {
         let result = nominatim.get_location(0.0, 0.0);
 
         assert!(result.is_ok());
-        assert!(result.as_ref().unwrap().country().unwrap() == "France".to_string());
-        assert!(result.as_ref().unwrap().city().unwrap() == "Paris".to_string());
-        assert!(result.as_ref().unwrap().state().unwrap() == "Île-de-France".to_string());
+        assert!(result.as_ref().unwrap().country().unwrap() == "France");
+        assert!(result.as_ref().unwrap().city().unwrap() == "Paris");
+        assert!(result.as_ref().unwrap().state().unwrap() == "Île-de-France");
         assert!(result.as_ref().unwrap().municipality().is_none());
         assert!(result.as_ref().unwrap().county().is_none());
         // Add more assertions based on the expected behavior
