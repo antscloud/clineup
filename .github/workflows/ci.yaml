@@ -10,10 +10,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Set up Rust
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
-          override: true
       - uses: actions/checkout@v3
       - name: Run tests
         run: cargo test --verbose
@@ -24,10 +23,9 @@ jobs:
     if: github.ref_type == 'tag'
     steps:
       - name: Set up Rust
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
-          override: true
       - name: Check out code
         uses: actions/checkout@v3
       - name: Publish to crates.io
@@ -80,10 +78,9 @@ jobs:
             binary: clineup.exe
     steps:
       - name: Set up Rust
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
-          override: true
       - name: Checkout
         uses: actions/checkout@v3
       - name: Build for ${{ matrix.os }} (Release)
