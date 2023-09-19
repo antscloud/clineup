@@ -30,7 +30,7 @@ jobs:
           - os: macos-latest
             target: x86_64-apple-darwin
             binary: clineup
-          - os: windows-latest
+          - os: ubuntu-latest
             target: x86_64-pc-windows-gnu
             binary: clineup.exe
     steps:
@@ -40,6 +40,10 @@ jobs:
           toolchain: stable
       - name: Checkout
         uses: actions/checkout@v3
+      - name: Install MinGW
+        if: matrix.target == 'x86_64-pc-windows-gnu'
+        run: |
+          apt install -y mingw-w64 pkg-config
       - name: Build for ${{ matrix.os }} (Release)
         run: |
           rustup target add ${{ matrix.target }}
