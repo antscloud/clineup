@@ -2,7 +2,7 @@
 edition = "2021"
 name = "clineup"
 readme = "README.md"
-version = "0.2.1-ci-3"
+version = "0.2.1"
 description = "A command-line utility for organizing media files"
 license = "AGPL-3.0"
 repository = "https://github.com/antscloud/clineup"
