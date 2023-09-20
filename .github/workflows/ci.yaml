@@ -54,7 +54,7 @@ jobs:
       - name: Compress artifacts
         run: |
           mkdir -p release-artifacts
-          tar czf release-artifacts/clineup-${{ github.ref_name}}-${{ matrix.build }}.tar.gz -C target/${{ matrix.target }}/release/${{ matrix.binary }}
+          tar czf release-artifacts/clineup-${{ github.ref_name}}-${{ matrix.build }}.tar.gz -C target/${{ matrix.target }}/release/ ${{ matrix.binary }}
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
