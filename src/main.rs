@@ -21,7 +21,11 @@ fn main() {
     let matches = parse_cli();
     let verbosity = matches.occurrences_of("verbose");
 
-    init_logger(verbosity);
+    if matches.is_present("dry-run") && verbosity == 0 {
+        init_logger(1);
+    } else {
+        init_logger(verbosity);
+    }
 
     let bar = ProgressBar::new_spinner();
     bar.set_message("Preparing transactions ...");

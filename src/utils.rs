@@ -12,7 +12,7 @@ use crate::organizer::OrganizationMode;
 use crate::organizer::OrganizationStrategy;
 use crate::organizer::SymlinksStrategy;
 use crate::{errors::ClineupError, placeholders::Placeholder};
-
+use path_clean::{clean, PathClean};
 use std::path::Path;
 use std::path::PathBuf;
 
@@ -89,7 +89,7 @@ pub fn get_full_format_path(
 ) -> Option<String> {
     let mut full_format: Option<PathBuf> = None;
     if let Some(_folder_format) = folder_format {
-        let mut _full_format = Path::new(&_folder_format).to_path_buf();
+        let mut _full_format = Path::new(&_folder_format).to_path_buf().clean();
         if let Some(_filename_format) = filename_format {
             _full_format = _full_format.join(_filename_format);
             full_format = Some(_full_format);
@@ -98,7 +98,7 @@ pub fn get_full_format_path(
             full_format = Some(_full_format);
         }
     } else if let Some(_filename_format) = filename_format {
-        full_format = Some(Path::new(&_filename_format).to_path_buf());
+        full_format = Some(Path::new(&_filename_format).to_path_buf().clean());
     }
 
     // Convert the final PathBuf into an Option<String>

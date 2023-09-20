@@ -25,6 +25,7 @@ sha2 = "0.10"
 thiserror = "1.0.48"
 http = "0.2.9"
 indicatif = "0.17.6"
+path-clean = "1.0.1"
 
 [[bin]]
 name = "clineup"
