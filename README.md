@@ -26,7 +26,7 @@ You can download the pre-built binary for your platform from the [Release page](
 For example, for Linux, you can use the following command :
 
 ```
-curl -L https://github.com/antscloud/clineup/releases/download/<clineup-version>/clineup-<clineup-version>-ubuntu-latest.tar.gz | tar -xz -C <where-you-want-to-install-it>
+curl -L https://github.com/antscloud/clineup/releases/download/<clineup-version>/clineup-<clineup-version>-linux-x86_64.tar.gz | tar -xz -C <where-you-want-to-install-it>
 ```
 
 Don't forget to add <where-you-want-to-install-it> to your PATH so that you can use it from anywhere you want
