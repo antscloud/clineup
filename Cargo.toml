@@ -27,6 +27,11 @@ http = "0.2.9"
 indicatif = "0.17.6"
 path-clean = "1.0.1"
 
+[dev-dependencies]
+assert_cmd = "2.0.12"
+predicates = "3.0.4"
+tempdir = "0.3.7"
+
 [[bin]]
 name = "clineup"
 path = "src/main.rs"
