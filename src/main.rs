@@ -26,20 +26,20 @@ fn main() {
     } else {
         init_logger(verbosity);
     }
-
-    let bar = ProgressBar::new_spinner();
-    bar.set_message("Preparing transactions ...");
-
+    debug!("Get configuration");
     let config = get_cli_config(matches);
 
     let strategy = get_organization_strategy(config.strategy.as_ref());
 
     if strategy.is_none() {
-        error!("Strategy is not set");
+        println!("Strategy is not set");
         exit(1)
     } else {
         debug!("Get strategy {:?}", config.strategy);
     }
+
+    debug!("Get reverse geocoding strategy");
+    let reverse_geocoding = get_reverse_geocoding(&config);
 
     let full_path = get_full_format_path(
         config.folder_format.as_ref(),
@@ -47,21 +47,18 @@ fn main() {
     );
 
     if full_path.is_none() {
-        error!("You should provide at least one of the folder or filename format.");
+        println!("You should provide at least one of the folder or filename format.");
         exit(1);
     } else {
         debug!("Full path {:?}", full_path);
     }
 
+    let destination = Path::new(&config.destination);
+
     debug!("Parsing placeholders");
     let _placeholders = parse_placeholders(full_path.as_ref().unwrap());
     let placeholders = map_placeholders_to_enums(&_placeholders);
     check_cli_config_from_placeholders(&config, &placeholders);
-
-    let destination = Path::new(&config.destination);
-
-    let reverse_geocoding = get_reverse_geocoding(&config);
-    debug!("Get reverse geocoding strategy");
 
     // It is mutable to be able to store the positions and location when optmizing gps positions
     let mut path_formatter = PathFormatter::new(
@@ -83,6 +80,10 @@ fn main() {
     }
 
     let mut file_processed_count = 0;
+
+    let bar = ProgressBar::new_spinner();
+    bar.set_message("Start organizing files...");
+
     for entry in files {
         if config.drop_duplicates {
             let is_duplicate = duplicates_finder.as_mut().unwrap().is_duplicate(&entry);
@@ -129,8 +130,11 @@ fn main() {
 
         file_processed_count += 1;
 
-        bar.set_message(format!("{:?} file processed", file_processed_count));
+        bar.set_message(format!("{:?} file(s) processed", file_processed_count));
         bar.tick();
     }
-    bar.finish_with_message(format!("Done. {:?} file processed.", file_processed_count));
+    bar.finish_with_message(format!(
+        "Done. {:?} file(s) processed.",
+        file_processed_count
+    ));
 }

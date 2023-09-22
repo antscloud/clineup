@@ -120,7 +120,7 @@ pub fn get_reverse_geocoding(config: &Config) -> Option<Box<dyn GpsResolutionPro
             GpsResolutionProviderImpl::Nominatim => {
                 // Check if Nominatim email is provided
                 if config.nominatim_email.is_none() {
-                    error!("Nominatim email is required when using Nominatim as a reverse geocoding provider.");
+                    println!("Nominatim email is required when using Nominatim as a reverse geocoding provider.");
                     exit(1)
                 }
                 // Create a new Nominatim instance with the provided email
