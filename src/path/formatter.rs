@@ -355,25 +355,21 @@ impl<'a, 'b> PathFormatter<'a, 'b> {
                         },
                         is_fallback
                     ),
-                    Placeholder::OriginalFilename => {
-                        if let Some(_path) = path.file_name() {
-                            _path.to_string_lossy().to_string()
-                        } else {
-                            {
-                                is_fallback = true;
-                                get_fallback_name("Original Filename")
-                            }
-                        }
-                    }
+                    Placeholder::OriginalFilename => path.file_name().map_or_else(
+                        || {
+                            is_fallback = true;
+                            get_fallback_name("Original Filename")
+                        },
+                        |file_name| file_name.to_string_lossy().to_string(),
+                    ),
                     Placeholder::OriginalFolder => {
-                        if let Some(_path) = path.parent() {
-                            _path.to_string_lossy().to_string()
-                        } else {
-                            {
+                        path.parent().and_then(|p| p.file_name()).map_or_else(
+                            || {
                                 is_fallback = true;
                                 get_fallback_name("Original Folder")
-                            }
-                        }
+                            },
+                            |dir_name| dir_name.to_string_lossy().to_string(),
+                        )
                     }
                     Placeholder::Fallback => placeholder_text.clone(),
                     Placeholder::Unknown => placeholder_text.clone(),
