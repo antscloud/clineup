@@ -6,6 +6,7 @@ use log::debug;
 use log::warn;
 
 use std::fs;
+use std::path::Path;
 use std::path::PathBuf;
 
 /// Check if the file extension of the given entry is allowed based on the provided extensions and excluded extensions.
@@ -98,15 +99,15 @@ pub fn is_allowed_size(
 /// # Returns
 ///
 /// The generated glob pattern as a `String`.
-fn get_glob_pattern(source: &str, recursive: &bool) -> String {
-    let mut source = source.to_owned();
+fn get_glob_pattern(source: &str, recursive: &bool) -> PathBuf {
+    let mut source_path = Path::new(source).to_path_buf();
     if *recursive {
-        source.push_str("**/*");
+        source_path = source_path.join("**/*");
     } else {
-        source.push('*');
+        source_path = source_path.join("*");
     }
 
-    source
+    source_path
 }
 
 pub struct FileIterator<'a> {
@@ -116,10 +117,14 @@ pub struct FileIterator<'a> {
 
 impl<'a> FileIterator<'a> {
     pub fn new(config: &'a Config) -> Self {
-        let source = get_glob_pattern(&config.source, &config.recursive);
+        let source_path = get_glob_pattern(&config.source, &config.recursive);
 
-        let entries = glob(&source)
-            .unwrap_or_else(|_| panic!("Failed to iterate through source pattern {source}"));
+        let entries = glob(&source_path.to_string_lossy()).unwrap_or_else(|_| {
+            panic!(
+                "Failed to iterate through source pattern {}",
+                source_path.display()
+            )
+        });
 
         FileIterator { entries, config }
     }
