@@ -1,6 +1,6 @@
-use std::{collections::HashMap, process::exit};
-
+use indexmap::IndexMap;
 use log::error;
+use std::process::exit;
 
 use crate::cli::Config;
 use crate::gps::base::GpsResolutionProvider;
@@ -19,7 +19,7 @@ use std::path::PathBuf;
 /// Checks if there is an EXIF placeholder in the given placeholders.
 /// Returns `true` if there is at least one EXIF placeholder, `false` otherwise.
 pub fn is_there_a_exif_placeholder(
-    placeholders: &HashMap<String, HashMap<String, Placeholder>>,
+    placeholders: &IndexMap<String, IndexMap<String, Placeholder>>,
 ) -> bool {
     let mut is_there_a_date_placeholder = false;
 
@@ -38,7 +38,7 @@ pub fn is_there_a_exif_placeholder(
 /// Checks if there is an metadata placeholder in the given placeholders.
 /// Returns `true` if there is at least one metadata placeholder, `false` otherwise.
 pub fn is_there_a_metadata_placeholder(
-    placeholders: &HashMap<String, HashMap<String, Placeholder>>,
+    placeholders: &IndexMap<String, IndexMap<String, Placeholder>>,
 ) -> bool {
     let mut is_there_a_metadata_placeholder = false;
     for _placeholders in placeholders.values() {
@@ -54,7 +54,7 @@ pub fn is_there_a_metadata_placeholder(
 /// Checks if there is an location related placeholder in the given placeholders.
 /// Returns `true` if there is at least one location related placeholder, `false` otherwise.
 pub fn is_there_a_location_placeholder(
-    placeholders: &HashMap<String, HashMap<String, Placeholder>>,
+    placeholders: &IndexMap<String, IndexMap<String, Placeholder>>,
 ) -> bool {
     let mut is_there_a_location_placeholder = false;
     for _placeholders in placeholders.values() {

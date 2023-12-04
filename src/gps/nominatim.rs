@@ -1,6 +1,7 @@
 use super::location::LocationInfo;
 use crate::errors::ClineupError;
 use crate::gps::base::GpsResolutionProvider;
+use log::debug;
 use reqwest;
 use serde_json;
 use std::cell::Cell;

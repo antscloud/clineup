@@ -50,7 +50,7 @@ fn main() {
         println!("You should provide at least one of the folder or filename format.");
         exit(1);
     } else {
-        debug!("Full path {:?}", full_path);
+        debug!("Full path {:?}", full_path.as_ref().unwrap());
     }
 
     let destination = Path::new(&config.destination);
@@ -58,6 +58,8 @@ fn main() {
     debug!("Parsing placeholders");
     let _placeholders = parse_placeholders(full_path.as_ref().unwrap());
     let placeholders = map_placeholders_to_enums(&_placeholders);
+    debug!("Placeholders found {:?}", placeholders);
+
     check_cli_config_from_placeholders(&config, &placeholders);
 
     // It is mutable to be able to store the positions and location when optmizing gps positions

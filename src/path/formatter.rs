@@ -1,5 +1,6 @@
 use exif::Error as _ExifError;
 use log::debug;
+use log::info;
 use log::warn;
 
 use crate::errors::ClineupError;
@@ -13,7 +14,7 @@ use crate::utils::is_there_a_exif_placeholder;
 use crate::utils::is_there_a_location_placeholder;
 use crate::utils::is_there_a_metadata_placeholder;
 use chrono::prelude::{DateTime, Local};
-use std::collections::HashMap;
+use indexmap::IndexMap;
 use std::path::Path;
 use std::path::PathBuf;
 
@@ -28,7 +29,10 @@ macro_rules! handle_placeholder {
             .ok_or_else(|| ClineupError::InvalidPlaceholderMapping($placeholder.to_string()))?
         {
             Ok(v) => match $formatter(v) {
-                Ok(result) => result,
+                Ok(result) => {
+                    debug!("Found {} for placeholder {}", result, $placeholder);
+                    result
+                }
                 Err(err) => {
                     warn!("{}", err);
                     $is_fallback = true;
@@ -55,20 +59,20 @@ fn round_float_to_nth_decimal_place(num: f32, decimal_places: u32) -> f32 {
 
 pub struct PathFormatter<'a, 'b> {
     path_to_format: &'a String,
-    placeholders: &'b HashMap<String, HashMap<String, Placeholder>>,
+    placeholders: &'b IndexMap<String, IndexMap<String, Placeholder>>,
     reverse_geocoding: Option<Box<dyn GpsResolutionProvider>>,
-    gps_positions: HashMap<StringLatLon, LocationInfo>,
+    gps_positions: IndexMap<StringLatLon, LocationInfo>,
     optimize_gps: bool,
 }
 
 impl<'a, 'b> PathFormatter<'a, 'b> {
     pub fn new(
         path_to_format: &'a String,
-        placeholders: &'b HashMap<String, HashMap<String, Placeholder>>,
+        placeholders: &'b IndexMap<String, IndexMap<String, Placeholder>>,
         reverse_geocoding: Option<Box<dyn GpsResolutionProvider>>,
         optimize_gps: bool,
     ) -> Self {
-        let gps_positions = HashMap::new();
+        let gps_positions = IndexMap::new();
         PathFormatter {
             path_to_format,
             placeholders,
@@ -107,7 +111,6 @@ impl<'a, 'b> PathFormatter<'a, 'b> {
             .as_ref()
             .unwrap()
             .get_location(rounded_lat, rounded_lon);
-
         match location {
             Ok(v) => {
                 debug!("Store location {:?}", v);
@@ -164,6 +167,7 @@ impl<'a, 'b> PathFormatter<'a, 'b> {
             let mut is_fallback = false;
 
             for (placeholder_text, placeholder) in placeholders {
+                debug!("Compute placeholder {:?}", full_text);
                 let current_result = match placeholder {
                     Placeholder::Year => {
                         handle_placeholder!(

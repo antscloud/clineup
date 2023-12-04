@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use indexmap::IndexMap;
 use std::process::exit;
 
 use crate::errors::ClineupError;
@@ -337,7 +337,7 @@ pub fn get_cli_config(matches: clap::ArgMatches) -> Config {
 
 pub fn check_cli_config_from_placeholders(
     config: &Config,
-    placeholders: &HashMap<String, HashMap<String, Placeholder>>,
+    placeholders: &IndexMap<String, IndexMap<String, Placeholder>>,
 ) {
     if is_there_a_location_placeholder(placeholders) && config.reverse_geocoding.is_none() {
         error!("Location tag found but reverse geocoding provider is not set");

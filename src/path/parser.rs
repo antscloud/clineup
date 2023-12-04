@@ -1,5 +1,5 @@
 use crate::placeholders::Placeholder;
-use std::collections::HashMap;
+use indexmap::IndexMap;
 
 fn is_word_char(c: char) -> bool {
     c.is_alphanumeric() || c == '_'
@@ -81,8 +81,8 @@ fn parse_curly_placeholder(iter: &mut std::iter::Peekable<std::str::Chars>) -> P
     }
 }
 
-pub fn parse_placeholders(path_to_format: &str) -> HashMap<String, Vec<String>> {
-    let mut placeholder_map: HashMap<String, Vec<String>> = HashMap::new();
+pub fn parse_placeholders(path_to_format: &str) -> IndexMap<String, Vec<String>> {
+    let mut placeholder_map: IndexMap<String, Vec<String>> = IndexMap::new();
     let mut iter = path_to_format.chars().peekable();
 
     while let Some(&c) = iter.peek() {
@@ -116,18 +116,18 @@ pub fn parse_placeholders(path_to_format: &str) -> HashMap<String, Vec<String>> 
 ///
 /// # Arguments
 ///
-/// * `_placeholders` - A reference to a HashMap containing placeholder strings.
+/// * `_placeholders` - A reference to a IndexMap containing placeholder strings.
 ///
 /// # Returns
 ///
-/// A HashMap containing the mappings from placeholder strings to Placeholder enums.
+/// A IndexMap containing the mappings from placeholder strings to Placeholder enums.
 pub fn map_placeholders_to_enums(
-    _placeholders: &HashMap<String, Vec<String>>,
-) -> HashMap<String, HashMap<String, Placeholder>> {
-    let mut placeholders: HashMap<String, HashMap<String, Placeholder>> = HashMap::new();
+    _placeholders: &IndexMap<String, Vec<String>>,
+) -> IndexMap<String, IndexMap<String, Placeholder>> {
+    let mut placeholders: IndexMap<String, IndexMap<String, Placeholder>> = IndexMap::new();
 
     for (full, placeholders_string) in _placeholders {
-        let mut placeholders_map_string_enum: HashMap<String, Placeholder> = HashMap::new();
+        let mut placeholders_map_string_enum: IndexMap<String, Placeholder> = IndexMap::new();
 
         for placeholder_string in placeholders_string {
             let placeholder_enum = Placeholder::from_string(placeholder_string);
@@ -229,7 +229,7 @@ mod tests {
         let input = "/home/myuser/photos/%year/{%city|%camera_brand|To sort}";
         let result = parse_placeholders(input);
 
-        let mut expected = HashMap::new();
+        let mut expected = IndexMap::new();
         expected.insert("%year".to_string(), vec!["%year".to_string()]);
         expected.insert(
             "{%city|%camera_brand|To sort}".to_string(),
