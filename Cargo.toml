@@ -8,7 +8,7 @@ license = "AGPL-3.0"
 name = "clineup"
 readme = "README.md"
 repository = "https://github.com/antscloud/clineup"
-version = "0.2.4"
+version = "0.2.5"
 
 [dependencies]
 chrono = "0.4.26"
